@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
-import { Sparkles, ShieldCheck, Zap } from "lucide-react";
+import { Zap, BookOpen } from "lucide-react";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -62,39 +62,32 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           Strictly Non-Scrollable (fixed within 100dvh)
           ========================================================================= */}
       <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between relative z-10 overflow-hidden">
-        <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-8 my-auto">
+        
+        {/* Desktop Left Info: Placed strictly AT THE BOTTOM BELOW the 3D looping animation */}
+        <div className="hidden lg:flex flex-col justify-end max-w-md space-y-2 select-none absolute bottom-8 left-8 lg:left-12 xl:left-16 z-10 pointer-events-none">
+          <h2 className="text-xl lg:text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight leading-snug drop-shadow-xs">
+            Orzuingizdagi natijaga <span className="text-[var(--primary)]">tizimli</span> tayyorlaning.
+          </h2>
           
-          {/* Desktop Left Info: Elevated nicely above footer, sitting gracefully below the 3D book */}
-          <div className="hidden lg:flex flex-col justify-end max-w-md space-y-2.5 select-none self-end mb-8 pb-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/70 dark:bg-white/10 backdrop-blur-md border border-[var(--primary)]/30 text-[var(--primary)] text-xs font-bold w-fit shadow-xs">
-              <Sparkles className="w-3.5 h-3.5 animate-pulse text-[var(--primary)]" />
-              <span>10,000+ IELTS O‘quvchilari Tanlovi</span>
-            </div>
-            
-            <p className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight leading-snug drop-shadow-xs">
-              IELTS <span className="text-[var(--primary)]">7.5+</span> natijasiga aqlli va tizimli tayyorgarlik.
-            </p>
-            
-            <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300 leading-relaxed drop-shadow-xs max-w-sm">
-              Cambridge rasmiy mock testlari, AI orqali Writing va Speaking tahlili hamda doimiy o‘sish ko‘rsatkichlari.
-            </p>
-            
-            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 pt-0.5">
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/60 dark:bg-white/5 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-xs text-[11px]">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Cambridge 10-19 Mocklar
-              </span>
-              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/60 dark:bg-white/5 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-xs text-[11px]">
-                <Zap className="w-3.5 h-3.5 text-amber-500" /> Tezkor AI Baholash
-              </span>
-            </div>
+          <p className="text-xs sm:text-sm font-medium text-zinc-600 dark:text-zinc-300 leading-relaxed max-w-sm drop-shadow-xs">
+            Cambridge mock testlari va sun’iy intellekt orqali Writing hamda Speaking bo‘yicha batafsil tahlil.
+          </p>
+          
+          <div className="flex flex-wrap items-center gap-2 pt-1 pointer-events-auto">
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 dark:bg-white/10 backdrop-blur-md border border-black/5 dark:border-white/10 text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 shadow-xs">
+              <BookOpen className="w-3.5 h-3.5 text-[var(--primary)]" /> Cambridge 10-19 Mocklar
+            </span>
+            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/70 dark:bg-white/10 backdrop-blur-md border border-black/5 dark:border-white/10 text-[11px] font-semibold text-zinc-700 dark:text-zinc-300 shadow-xs">
+              <Zap className="w-3.5 h-3.5 text-amber-500" /> Tezkor AI Tahlil
+            </span>
           </div>
-
-          {/* Right/Center Column: Auth Card (Super compact, strictly non-overflowing) */}
-          <div className="w-full max-w-[400px] mx-auto lg:mx-0 lg:ml-auto">
-            {children}
-          </div>
-
         </div>
+
+        {/* Right/Center Column: Auth Card (Vertically centered, glassmorphic) */}
+        <div className="w-full max-w-[400px] mx-auto lg:mx-0 lg:ml-auto my-auto relative z-10">
+          {children}
+        </div>
+
       </main>
 
       {/* =========================================================================
