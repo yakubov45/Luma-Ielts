@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Reading Simulator - Single Passage</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+<style>
+    /* --- VARIABLES --- */
+    :root {
+        --base-size: 14px;
+        --header-bg: #ffffff;
+        --header-text: #333333;
+        --bg-app: #f4f4f4;
+        --bg-paper: #ffffff;
+        --text-main: #000000;
+        --border-color: #dcdcdc;
+        --footer-bg: #e0e0e0;
+        --active-q-bg: #333;
+        --active-q-text: #fff;
+        --instruction-bg: #fdfdfd;
+        --instruction-border: #888;
+    }
+
+    /* THEMES */
+    body.theme-dark {
+        --header-bg: #1a1a1a; --header-text: #fff; --bg-app: #333; --bg-paper: #000;
+        --text-main: #ccc; --border-color: #555; --footer-bg: #222;
+        --active-q-bg: #ccc; --active-q-text: #000; --instruction-bg: #222; --instruction-border: #777;
+    }
+    body.theme-yellow {
+        --header-bg: #000; --header-text: #ff0; --bg-app: #111; --bg-paper: #000;
+        --text-main: #ff0; --border-color: #ff0; --footer-bg: #111;
+        --active-q-bg: #ff0; --active-q-text: #000; --instruction-bg: #111; --instruction-border: #ff0;
+    }
+
+    /* SIZES */
+    body.text-reg { --base-size: 14px; }
+    body.text-med { --base-size: 16px; }
+    body.text-lg { --base-size: 18px; }
+    body.text-xl { --base-size: 22px; }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0; padding: 0;
+        font-family: 'Verdana', sans-serif;
+        height: 100vh;
+        display: flex; flex-direction: column;
+        background-color: var(--bg-app);
+        color: var(--text-main);
+        overflow: hidden;
+        font-size: var(--base-size);
+    }
+
+    /* --- HEADER --- */
+    .top-bar {
+        background-color: var(--header-bg);
+        color: var(--header-text);
+        height: 60px;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 20px; flex-shrink: 0;
+        border-bottom: 1px solid var(--border-color);
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .top-left { font-weight: bold; font-size: 1.1em; }
+    
+    .timer-group {
+        position: absolute; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 15px;
+    }
+    .timer { font-size: 1.4em; font-weight: bold; color: #d32f2f; font-family: monospace; }
+    
+    .telegram-link {
+        text-decoration: none; color: #0088cc; font-size: 0.9em;
+        display: flex; align-items: center; gap: 5px;
+        background: rgba(0, 136, 204, 0.1); padding: 4px 10px; border-radius: 15px;
+        transition: background 0.2s;
+    }
+    .telegram-link:hover { background: rgba(0, 136, 204, 0.2); }
+
+    /* Settings Menu */
+    .settings-menu {
+        position: absolute; top: 60px; right: 10px;
+        background: var(--header-bg); border: 1px solid var(--border-color);
+        padding: 15px; border-radius: 4px; display: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1000; width: 220px;
+        color: var(--header-text);
+    }
+    .s-btn { 
+        display: block; width: 100%; padding: 8px 10px; cursor: pointer; font-size: 13px; 
+        border: 1px solid var(--border-color); background: var(--bg-paper); 
+        color: var(--text-main); margin-bottom: 6px; text-align: left; border-radius: 3px;
+    }
+    .s-btn:hover { background: var(--border-color); }
+
+    /* --- INSTRUCTION BANNER --- */
+    .instruction-banner {
+        background-color: #f0f0f0; padding: 8px 20px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.95em; color: #333; flex-shrink: 0;
+    }
+    body.theme-dark .instruction-banner { background-color: #333; color: #fff; }
+    body.theme-yellow .instruction-banner { background-color: #222; color: #ff0; border-color: #ff0; }
+
+    /* --- MAIN LAYOUT --- */
+    .main-container { display: flex; flex: 1; overflow: hidden; background-color: var(--bg-paper); position: relative; }
+    .passage-pane, .question-pane { padding: 30px; overflow-y: auto; line-height: 1.7; outline: none; height: 100%; }
+    .passage-pane { width: 50%; border-right: 2px solid var(--border-color); font-family: 'Times New Roman', Times, serif; font-size: 1.1em; }
+    .question-pane { flex: 1; font-family: 'Verdana', sans-serif; }
+    .passage-content, .question-content { display: none; }
+    .passage-content.active, .question-content.active { display: block; }
+    
+    .passage-pane h2 { font-size: 1.5em; margin-bottom: 10px; font-weight: bold; color: var(--text-main); }
+    .passage-pane p { margin-bottom: 15px; text-align: justify; }
+    
+    .divider { width: 8px; background: #f0f0f0; cursor: col-resize; border-left: 1px solid #ddd; border-right: 1px solid #ddd; z-index: 10; }
+    body.theme-dark .divider { background: #444; border-color: #555; }
+    body.theme-yellow .divider { background: #222; border-color: #ff0; }
+
+    /* --- INSTRUCTION BOXES & LISTS --- */
+    .instruction-box { border: 1px solid var(--instruction-border); background-color: var(--instruction-bg); padding: 15px; margin-bottom: 25px; font-size: 0.9em; }
+    .instruction-box h3 { margin: 0 0 5px 0; font-size: 1em; text-transform: uppercase; }
+    .instruction-box p { margin: 5px 0 0 0; }
+    
+    /* --- QUESTIONS --- */
+    .q-item { margin-bottom: 15px; display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; transition: background-color 0.3s; }
+    .q-item-block { margin-bottom: 20px; transition: background-color 0.3s; }
+    
+    .q-num-box { display: inline-block; border: 1px solid var(--text-main); padding: 2px 5px; margin-right: 8px; font-weight: bold; min-width: 25px; text-align: center; color: var(--text-main); flex-shrink: 0;}
+    .q-num-plain { display: inline-block; min-width: 20px; font-weight: bold; margin-right: 5px; color: var(--text-main); flex-shrink: 0;}
+    
+    .radio-option { display: flex; gap: 8px; margin-bottom: 8px; cursor: pointer; align-items: center; }
+    input[type="radio"], input[type="checkbox"] { transform: scale(1.2); cursor: pointer; margin-right: 5px; }
+    
+    .gap-input { 
+        text-align: center; width: 150px; font-weight: bold; 
+        border-bottom: 2px solid #333; border-top:none; border-left:none; border-right:none; 
+        background: transparent; color: var(--text-main); font-size: inherit; margin: 0 5px;
+    }
+    .gap-input.long { width: 250px; }
+    .gap-input.short { width: 100px; }
+    .gap-input::placeholder { color: #000; font-weight: bold; opacity: 1; font-size: 1.1em; }
+    .gap-input:focus { outline: none; border-bottom: 2px solid #0088cc; }
+    .gap-input.correct { color: green !important; border-bottom-color: green !important; }
+    .gap-input.incorrect { color: red !important; border-bottom-color: red !important; }
+    body.theme-dark .gap-input { border-bottom-color: #ccc; }
+    body.theme-dark .gap-input::placeholder { color: #fff; }
+    body.theme-yellow .gap-input { border-bottom-color: #ff0; }
+    body.theme-yellow .gap-input::placeholder { color: #ff0; }
+
+    /* --- FOOTER --- */
+    .footer-bar { height: 60px; background-color: var(--footer-bg); border-top: 1px solid var(--border-color); display: flex; align-items: stretch; padding: 0; flex-shrink: 0; }
+    .footer-parts-container { display: flex; flex: 1; width: 100%; }
+    .footer-part-item { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 20px; cursor: pointer; border-right: 1px solid #ccc; transition: background 0.2s; }
+    body.theme-dark .footer-part-item { border-right-color: #555; }
+    body.theme-yellow .footer-part-item { border-right-color: #ff0; }
+    .footer-part-item:hover { background-color: rgba(0,0,0,0.05); }
+    body.theme-dark .footer-part-item:hover { background-color: rgba(255,255,255,0.1); }
+    body.theme-yellow .footer-part-item:hover { background-color: #222; }
+    
+    .part-content-wrapper { display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%; }
+    .p-label { font-weight: bold; font-size: 15px; color: var(--text-main); white-space: nowrap; }
+    .p-count { font-weight: bold; font-size: 13px; color: #0088cc; white-space: nowrap; } 
+    body.theme-dark .p-count { color: #44ccff; }
+    body.theme-yellow .p-count { color: #ff0; }
+
+    .q-numbers-list { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; margin-top: 4px; padding-bottom: 2px; }
+    .q-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 1px solid #999; cursor: pointer; color: #333; background: #fff; border-radius: 2px; font-size: 12px; flex-shrink: 0; }
+    .q-btn:hover { background: #ccc; }
+    .q-btn.answered { background-color: var(--active-q-bg); color: var(--active-q-text); border-color: var(--text-main); font-weight: bold; }
+
+    .submit-container { width: 60px; background: #ccc; display: flex; align-items: center; justify-content: center; cursor: pointer; border-left: 1px solid #999; }
+    .submit-container:hover { background: #bbb; }
+    .submit-icon { font-size: 20px; color: #333; }
+    body.theme-dark .submit-container { background: #444; border-left-color: #555; }
+    body.theme-dark .submit-icon { color: #fff; }
+    body.theme-yellow .submit-container { background: #333; border-left-color: #ff0; }
+    body.theme-yellow .submit-icon { color: #ff0; }
+
+    /* --- FLOATING NAV --- */
+    .floating-nav { position: fixed; bottom: 80px; right: 20px; display: flex; border-radius: 4px; overflow: hidden; z-index: 100; box-shadow: 0 4px 8px rgba(0,0,0,0.3); }
+    .nav-arrow-btn { width: 60px; height: 50px; border: none; cursor: pointer; font-size: 24px; display: flex; align-items: center; justify-content: center; }
+    #prevBtn { background-color: #dcdcdc; color: #fff; } #prevBtn:enabled { background-color: #ccc; color: #333; }
+    #nextBtn { background-color: #000; color: #fff; }
+
+    /* --- HIGHLIGHTER --- */
+    #highlightMenu { position: absolute; display: none; background: #fff; padding: 5px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 9999; }
+    .hl-color { width: 24px; height: 24px; display: inline-block; margin: 0 4px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; }
+
+    /* --- MODAL --- */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items: center; justify-content: center; }
+    .modal-content { background: #fff; width: 85%; max-width: 900px; height: 85%; border-radius: 4px; display: flex; flex-direction: column; color: #000; padding: 20px; }
+    .modal-header { display: flex; justify-content: space-between; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+    .modal-body { flex: 1; overflow-y: auto; }
+    .result-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .result-table th, .result-table td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    .result-table tbody tr:hover { background-color: rgba(0,0,0,0.05); }
+    body.theme-dark .result-table tbody tr:hover { background-color: rgba(255,255,255,0.1); }
+    body.theme-yellow .result-table tbody tr:hover { background-color: rgba(255,255,0,0.2); }
+    .status-correct { color: green; font-weight: bold; }
+    .status-incorrect { color: red; font-weight: bold; }
+</style>
+</head>
+<body class="theme-standard text-reg">
+
+    <div class="top-bar">
+        <div class="top-left">IELTS Reading test simulator</div>
+        <div class="timer-group">
+            <div class="timer" id="timer">00:00</div>
+            <a href="https://t.me/khamidovs_ielts" target="_blank" class="telegram-link"><i class="fab fa-telegram-plane"></i> @khamidovs_ielts</a>
+        </div>
+        <div style="font-size:18px; cursor:pointer; padding:5px;" onclick="toggleSettings()"><i class="fas fa-bars"></i></div>
+        <div class="settings-menu" id="settingsMenu">
+            <h4 style="margin:0 0 10px 0; border-bottom: 1px solid var(--border-color); padding-bottom:5px;">Settings</h4>
+            <div style="margin-bottom:15px;">
+                <div style="font-weight:bold; margin-bottom:5px;">Text Size</div>
+                <div style="display:flex; flex-direction:column;">
+                    <button class="s-btn" onclick="setSize('text-reg')">Standard</button>
+                    <button class="s-btn" onclick="setSize('text-med')">Medium</button>
+                    <button class="s-btn" onclick="setSize('text-lg')">Large</button>
+                    <button class="s-btn" onclick="setSize('text-xl')">Extra Large</button>
+                </div>
+            </div>
+            <div>
+                <div style="font-weight:bold; margin-bottom:5px;">Color Mode</div>
+                <div style="display:flex; flex-direction:column;">
+                    <button class="s-btn" onclick="setTheme('theme-standard')">Standard</button>
+                    <button class="s-btn" onclick="setTheme('theme-dark')">White on Black</button>
+                    <button class="s-btn" onclick="setTheme('theme-yellow')">Yellow on Black</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="instruction-banner" id="topInstruction">Read the text and answer questions 1–13.</div>
+
+    <div class="main-container">
+        <!-- PASSAGE PANE -->
+        <div class="passage-pane" id="passagePane">
+            
+            <div id="p-content-1" class="passage-content active">
+                <h2>Bondi</h2>
+                <h3>Bondi is Australia's most famous beach, but how did this come about?</h3>
+                
+                <p>Australians have not always valued Sydney's Bondi Beach. Beaches attracted little attention in the first century of British colonial settlement, when it was the country's desert interior that stirred the settlers' imagination. The visual image of Australia was based on stories of explorers searching in the dry red centre for an inland sea, of men driving cattle vast distances, or shearing sheep in hot dusty sheds. It was a cultural landscape developed in hardship and tragedy.</p>
+                <p>Before the British settlement, there had been a strong traditional connection to the coast among Aboriginal people, the indigenous inhabitants of Australia, and evidence of this connection can still be seen. In 1788 Governor Phillip, who established the first British settlement on the eastern coast of Australia, estimated that there were approximately 1500 Aboriginal people living within a 10-mile radius of Sydney Harbour. But by the 1820s the local Aboriginal population had largely disappeared as a result of contact with the diseases brought by the settlers.</p>
+                <p>In the minds of the new settlers, Aboriginal culture would come to be predominantly associated with the inland desert. The cultural associations that formed around Australia's beach landscape would, in turn, be almost entirely European in nature. Compared with the 'ancient' and bicultural mythology of Australia's interior, its beach culture would be depicted as being wholly modern and Western.</p>
+                <p>At the end of the 19th century, the beach emerged in art and literature as an alternative cultural landscape to the mythology of the interior. The two settings were similar in that they shared an idea of purity because of their association with nature, but otherwise they represented vastly different qualities. The interior of the country represented hard work and suffering, while the coast evoked images of health, leisure and egalitarianism.</p>
+                <p>In Britain, the association of beaches with health received royal blessing in 1783 when a prominent member of the royal family attended the health spas at Brighton Beach on the English coast, and built a pavilion there. With its entertainment, hotels and weekend villas, Brighton became the model for beaches throughout Britain's colonies. Reflecting the English resort's influence, seven Sydney beach suburbs still have a Brighton Street. Sydney's beach suburbs, rising to prominence in the late 19th century, shared Brighton's association with health. The perception of the city's beaches as places of purity and well-being was strengthened by contrast with the increasingly polluted city centre.</p>
+                <p>By the end of the 19th century, Sydney's beaches had begun to differ in their socio-economic characteristics. The beach in the suburb of Coogee was the first ocean beach to become accessible by tram from the city. Promoted as a garden suburb, Coogee became a recreational meeting place for the city's middle class. The suburb of Manly, with its beach and esplanade, copied the British resort model, and attracted the city's wealthy class living in the northern suburbs as well as holiday-makers from farms in the countryside.</p>
+                <p>The suburb of Bondi was developed after Coogee and Manly and took on a character distinct from the city's other beach suburbs. With the extension of the tramline to Bondi in the 1890s, a number of substantial properties were built there. Property developers, expecting continued middle-class development, subdivided the area into house-sized plots. However, a sudden demand for housing in the first decade of the 20th century saw the plans for houses put aside, and investors built blocks of flats instead. A treeless plain of red-roofed apartments began to spread its way across Bondi. Built with cheap local bricks, the size and quality of the apartments were generally more modest than those in neighbouring suburbs, and quickly attracted a population of rent-paying, working-class tenants.</p>
+                <p>With tram access extended all the way to the beach, Bondi also became the most accessible ocean beach to people living in the inner city, who were mostly working class. The pleasures of the sun, sea and surf were not only for the wealthy, but free to all. The Australian notion of beaches as places of social equality became established, and Bondi exemplified this precisely.</p>
+                <p>Bondi's identity as a largely working-class suburb began to change in the 1950s. The suburb and its beach first came to international attention in 1954 when Queen Elizabeth of England and her husband Prince Philip attended a surf carnival there. Since then, Bondi has become one of Sydney's most used sites for large-scale public events. The film industry quickly built on the fame that Bondi beach acquired as a result of the surf carnival, and since then it has been the location of many Australian films. With the expanding use of Bondi as a media setting, the suburb became home to a community of artists as well as film and television workers. Since the 1970s Bondi has become the almost inevitable backdrop for any artistic or commercial project in Sydney that requires a beach setting. Bondi is now famous simply for being famous.</p>
+                <p>In the preparations for the 2000 Olympic Games, Bondi was nominated to host the 10,000-seat beach volleyball stadium. Some people in the Bondi community did not support the proposal because of concerns for the environment, but the opposition was dismissed by the Olympics Organising Committee. There were good practical reasons for the Committee to support Bondi's hosting of the event, but the main reason the Committee insisted the stadium be built there was the international expectation that Bondi, as Australia's best known beach, would be the stadium's scenic backdrop.</p>
+            </div>
+        </div>
+
+        <div class="divider" id="divider"></div>
+
+        <div class="question-pane" id="questionPane">
+            <div id="q-content-1" class="question-content active">
+                
+                <div class="instruction-box">
+                    <h3>Questions 1 - 6</h3>
+                    <p>Do the following statements agree with the information given in Reading Passage 1?</p>
+                    <p>In boxes 1-6 on your answer sheet, write:</p>
+                    <p><strong>TRUE</strong> if the statement agrees with the information</p>
+                    <p><strong>FALSE</strong> if the statement contradicts the information</p>
+                    <p><strong>NOT GIVEN</strong> if there is no information on this</p>
+                </div>
+                
+                <div class="q-item-block">
+                    <div class="q-item" style="flex-wrap: nowrap; align-items: flex-start;">
+                        <span class="q-num-plain">1</span> 
+                        <span style="flex: 1;">Bondi beach has been popular since the arrival of the first British settlers in Australia</span>
+                    </div>
+                    <div style="margin-left: 25px;">
+                        <label class="radio-option"><input type="radio" name="q1" value="TRUE" onchange="updateAnswerStatus(1)"> TRUE</label> <label class="radio-option"><input type="radio" name="q1" value="FALSE" onchange="updateAnswerStatus(1)"> FALSE</label> <label class="radio-option"><input type="radio" name="q1" value="NOT GIVEN" onchange="updateAnswerStatus(1)"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="q-item-block">
+                    <div class="q-item" style="flex-wrap: nowrap; align-items: flex-start;">
+                        <span class="q-num-plain">2</span> 
+                        <span style="flex: 1;">Aborigines in the centre of Australia had a different culture from those on the coast.</span>
+                    </div>
+                    <div style="margin-left: 25px;">
+                        <label class="radio-option"><input type="radio" name="q2" value="TRUE" onchange="updateAnswerStatus(2)"> TRUE</label> <label class="radio-option"><input type="radio" name="q2" value="FALSE" onchange="updateAnswerStatus(2)"> FALSE</label> <label class="radio-option"><input type="radio" name="q2" value="NOT GIVEN" onchange="updateAnswerStatus(2)"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="q-item-block">
+                    <div class="q-item" style="flex-wrap: nowrap; align-items: flex-start;">
+                        <span class="q-num-plain">3</span> 
+                        <span style="flex: 1;">Contemporary Australian beach culture reflects Aboriginal traditions.</span>
+                    </div>
+                    <div style="margin-left: 25px;">
+                        <label class="radio-option"><input type="radio" name="q3" value="TRUE" onchange="updateAnswerStatus(3)"> TRUE</label> <label class="radio-option"><input type="radio" name="q3" value="FALSE" onchange="updateAnswerStatus(3)"> FALSE</label> <label class="radio-option"><input type="radio" name="q3" value="NOT GIVEN" onchange="updateAnswerStatus(3)"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="q-item-block">
+                    <div class="q-item" style="flex-wrap: nowrap; align-items: flex-start;">
+                        <span class="q-num-plain">4</span> 
+                        <span style="flex: 1;">At the end of the 19th century, some parts of Australia were associated with a difficult life.</span>
+                    </div>
+                    <div style="margin-left: 25px;">
+                        <label class="radio-option"><input type="radio" name="q4" value="TRUE" onchange="updateAnswerStatus(4)"> TRUE</label> <label class="radio-option"><input type="radio" name="q4" value="FALSE" onchange="updateAnswerStatus(4)"> FALSE</label> <label class="radio-option"><input type="radio" name="q4" value="NOT GIVEN" onchange="updateAnswerStatus(4)"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="q-item-block">
+                    <div class="q-item" style="flex-wrap: nowrap; align-items: flex-start;">
+                        <span class="q-num-plain">5</span> 
+                        <span style="flex: 1;">Sydney's beach suburbs were influenced by a seaside town in England.</span>
+                    </div>
+                    <div style="margin-left: 25px;">
+                        <label class="radio-option"><input type="radio" name="q5" value="TRUE" onchange="updateAnswerStatus(5)"> TRUE</label> <label class="radio-option"><input type="radio" name="q5" value="FALSE" onchange="updateAnswerStatus(5)"> FALSE</label> <label class="radio-option"><input type="radio" name="q5" value="NOT GIVEN" onchange="updateAnswerStatus(5)"> NOT GIVEN</label>
+                    </div>
+                </div>
+                <div class="q-item-block">
+                    <div class="q-item" style="flex-wrap: nowrap; align-items: flex-start;">
+                        <span class="q-num-plain">6</span> 
+                        <span style="flex: 1;">At the end of the 19th century, Sydney's beaches were regarded as unhealthy places to be.</span>
+                    </div>
+                    <div style="margin-left: 25px;">
+                        <label class="radio-option"><input type="radio" name="q6" value="TRUE" onchange="updateAnswerStatus(6)"> TRUE</label> <label class="radio-option"><input type="radio" name="q6" value="FALSE" onchange="updateAnswerStatus(6)"> FALSE</label> <label class="radio-option"><input type="radio" name="q6" value="NOT GIVEN" onchange="updateAnswerStatus(6)"> NOT GIVEN</label>
+                    </div>
+                </div>
+
+                <div class="instruction-box" style="margin-top: 25px;">
+                    <h3>Questions 7 - 13</h3>
+                    <p>Answer the questions below.</p>
+                    <p>Choose <strong>NO MORE THAN THREE WORDS AND/OR A NUMBER</strong> from the passage for each answer.</p>
+                    <p>Write your answers in boxes 7-13 on your answer sheet.</p>
+                </div>
+                
+                <div class="q-item-block" style="line-height: 2.2;">
+                    <div style="margin-bottom: 15px;">
+                        <span class="q-num-plain">7</span> What form of public transport could people use to get to the beach at the end of the 19th century?<br>
+                        <input type="text" id="q7" class="gap-input long" placeholder="7" oninput="updateAnswerStatus(7)">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <span class="q-num-plain">8</span> Which beachside suburb was popular with people from rural areas?<br>
+                        <input type="text" id="q8" class="gap-input long" placeholder="8" oninput="updateAnswerStatus(8)">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <span class="q-num-plain">9</span> Which suburb helped to meet the needs of Sydney's accommodation shortage?<br>
+                        <input type="text" id="q9" class="gap-input long" placeholder="9" oninput="updateAnswerStatus(9)">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <span class="q-num-plain">10</span> When did British royalty visit Bondi?<br>
+                        <input type="text" id="q10" class="gap-input long" placeholder="10" oninput="updateAnswerStatus(10)">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <span class="q-num-plain">11</span> Which industry is Bondi now associated with?<br>
+                        <input type="text" id="q11" class="gap-input long" placeholder="11" oninput="updateAnswerStatus(11)">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <span class="q-num-plain">12</span> What sporting event at the 2000 Olympic Games was held at Bondi?<br>
+                        <input type="text" id="q12" class="gap-input long" placeholder="12" oninput="updateAnswerStatus(12)">
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <span class="q-num-plain">13</span> What did people think could be damaged by building a stadium on Bondi Beach?<br>
+                        <input type="text" id="q13" class="gap-input long" placeholder="13" oninput="updateAnswerStatus(13)">
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- FLOAT NAV -->
+    <div class="floating-nav">
+        <!-- Hidden as there is only 1 part -->
+    </div>
+
+    <div class="footer-bar" id="footerBar">
+        <!-- Footer Nav injected via JS -->
+    </div>
+
+    <!-- Highlight Menu -->
+    <div id="highlightMenu">
+        <span class="hl-color" style="background:#ffff00" onmousedown="applyHighlight('yellow', event)"></span>
+        <span class="hl-color" style="background:#44ff44" onmousedown="applyHighlight('#44ff44', event)"></span>
+        <span class="hl-color" style="background:#44ccff" onmousedown="applyHighlight('#44ccff', event)"></span>
+        <span class="hl-color" style="background:#fff; color:#333; text-align:center; line-height:22px; font-weight:bold; font-size:12px; border: 1px solid #ccc;" onmousedown="applyHighlight('remove', event)">X</span>
+    </div>
+
+    <!-- Results Modal -->
+    <div class="modal-overlay" id="resultsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="margin: 0;">Test Results</h2>
+                <button onclick="document.getElementById('resultsModal').style.display='none'" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h1 style="text-align:center; margin-top: 0;" id="finalScore"></h1>
+                <table class="result-table">
+                    <thead><tr><th>Q</th><th>Your Answer</th><th>Correct Answer</th><th>Status</th></tr></thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+            <div style="padding: 20px; text-align:center; border-top: 1px solid #ddd;">
+                <button onclick="document.getElementById('resultsModal').style.display='none'" style="padding:10px 20px; cursor:pointer; font-size: 16px; background: #000; color: #fff; border: none; border-radius: 4px;">Review Mistakes</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- TIMER LOGIC (Stopwatch - Counts Up) ---
+    let time = 0; 
+    const timerInterval = setInterval(() => {
+        time++;
+        const m = Math.floor(time / 60).toString().padStart(2, '0');
+        const s = (time % 60).toString().padStart(2, '0');
+        const el = document.getElementById('timer');
+        if(el) el.innerText = `${m}:${s}`;
+    }, 1000);
+
+    const partsConfig = {
+        1: { start: 1, end: 13, instr: "Read the text and answer questions 1–13." }
+    };
+    let currentPart = 1;
+
+    // ANSWER KEY
+    const answers = { 
+        1:'FALSE', 2:'NOT GIVEN', 3:'FALSE', 4:'TRUE', 5:'TRUE', 6:'FALSE', 
+        7:'TRAM|TRAMS|A TRAM', 8:'MANLY', 9:'BONDI', 10:'1954|IN 1954', 
+        11:'FILM|THE FILM INDUSTRY|FILM INDUSTRY|FILM AND TELEVISION|MEDIA', 12:'BEACH VOLLEYBALL|VOLLEYBALL', 13:'THE ENVIRONMENT|ENVIRONMENT'
+    };
+
+    function init() {
+        renderFooter();
+        
+        const divider = document.getElementById('divider');
+        const pPane = document.getElementById('passagePane');
+        let isDrag = false;
+        if(divider && pPane) {
+            divider.addEventListener('mousedown', (e) => { isDrag = true; e.preventDefault(); });
+            document.addEventListener('mouseup', () => isDrag = false);
+            document.addEventListener('mousemove', (e) => {
+                if(isDrag) {
+                    let pct = (e.clientX / window.innerWidth) * 100;
+                    if(pct > 20 && pct < 80) pPane.style.width = pct + '%';
+                }
+            });
+        }
+        
+        setupHighlighter();
+    }
+
+    function setPart(p) {
+        currentPart = p;
+        document.querySelectorAll('.passage-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.question-content').forEach(el => el.classList.remove('active'));
+        const pContent = document.getElementById(`p-content-${p}`);
+        const qContent = document.getElementById(`q-content-${p}`);
+        if(pContent) pContent.classList.add('active');
+        if(qContent) qContent.classList.add('active');
+        
+        const pPane = document.getElementById('passagePane');
+        const qPane = document.getElementById('questionPane');
+        if(pPane) pPane.scrollTop = 0;
+        if(qPane) qPane.scrollTop = 0;
+        
+        document.getElementById('topInstruction').innerText = partsConfig[p].instr;
+        renderFooter();
+    }
+
+    // --- IMMEDIATE UPDATE LOGIC ---
+    function updateAnswerStatus(q) {
+        const btn = document.getElementById(`btn-q${q}`);
+        if(isAnswered(q)) {
+            if(btn) btn.classList.add('answered');
+        } else {
+            if(btn) btn.classList.remove('answered');
+        }
+        updateProgressCount();
+    }
+
+    function updateProgressCount() {
+        for(let p=1; p<=1; p++) {
+            const range = partsConfig[p];
+            const total = range.end - range.start + 1;
+            const answeredCount = countAnswered(range.start, range.end);
+            const countEl = document.getElementById(`p-count-${p}`);
+            if (countEl) countEl.innerText = `${answeredCount} of ${total}`;
+        }
+    }
+
+    function renderFooter() {
+        const footer = document.getElementById('footerBar');
+        if(!footer) return;
+        footer.innerHTML = ''; 
+
+        const partsContainer = document.createElement('div');
+        partsContainer.className = 'footer-parts-container';
+
+        for(let p = 1; p <= 1; p++) {
+            const range = partsConfig[p];
+            const total = range.end - range.start + 1;
+            const answeredCount = countAnswered(range.start, range.end);
+
+            const partItem = document.createElement('div');
+            partItem.className = 'footer-part-item';
+            partItem.onclick = () => setPart(p);
+
+            const contentWrapper = document.createElement('div');
+            contentWrapper.className = 'part-content-wrapper';
+
+            const label = document.createElement('span');
+            label.className = 'p-label';
+            label.innerText = `Questions ${range.start}-${range.end}`;
+            contentWrapper.appendChild(label);
+
+            if(p === currentPart) {
+                const list = document.createElement('div');
+                list.className = 'q-numbers-list';
+                for(let q = range.start; q <= range.end; q++) {
+                    const btn = document.createElement('div');
+                    btn.className = 'q-btn';
+                    btn.innerText = q;
+
+                    btn.id = `btn-q${q}`;
+                    if(isAnswered(q)) btn.classList.add('answered');
+                    btn.onclick = (e) => { e.stopPropagation(); scrollToQ(q); };
+                    list.appendChild(btn);
+                }
+                contentWrapper.appendChild(list);
+            } 
+            
+            const count = document.createElement('span');
+            count.className = 'p-count';
+            count.id = `p-count-${p}`;
+            count.innerText = `${answeredCount} of ${total}`;
+            contentWrapper.appendChild(count);
+
+            partItem.appendChild(contentWrapper);
+            partsContainer.appendChild(partItem);
+        }
+        footer.appendChild(partsContainer);
+
+        const subContainer = document.createElement('div');
+        subContainer.className = 'submit-container';
+        subContainer.onclick = submitTest;
+        subContainer.innerHTML = '<i class="fas fa-check submit-icon"></i>';
+        footer.appendChild(subContainer);
+    }
+
+    function scrollToQ(q) {
+        let targetId = `q${q}`;
+
+        const el = document.getElementById(targetId);
+        if(el) {
+            el.scrollIntoView({behavior:'smooth', block:'center'});
+        } else {
+             let inp = document.getElementById(`q${q}_in`) || document.querySelector(`input[name="q${q}"]`);
+             
+             if(!inp) { 
+                 const slot = document.querySelector(`.drop-slot[data-q="${q}"]`);
+                 if(slot) {
+                    slot.scrollIntoView({behavior:'smooth', block:'center'});
+                    return;
+                 }
+                 const sel = document.getElementById(`q${q}`); // Dropdown select
+                 if (sel) {
+                    sel.scrollIntoView({behavior:'smooth', block:'center'});
+                    return;
+                 }
+                 return;
+             }
+             if(inp) inp.closest('.q-item, tr, .instruction-box, td, .q-item-block').scrollIntoView({behavior:'smooth', block:'center'});
+        }
+    }
+
+    // --- NEW JUMP TO Q FUNCTION ---
+    function jumpToQ(q) {
+        document.getElementById('resultsModal').style.display = 'none';
+        
+        let part = 1; 
+        
+        if (currentPart !== part) {
+            setPart(part);
+        }
+        
+        setTimeout(() => {
+            scrollToQ(q);
+            // Highlight the question temporarily to show where they jumped
+            let targetId = `q${q}`;
+            let el = document.getElementById(targetId) || document.getElementById(`q${q}_in`) || document.querySelector(`input[name="q${q}"]`);
+            if(!el) {
+                const slot = document.querySelector(`.drop-slot[data-q="${q}"]`);
+                if(slot) el = slot;
+                
+                const sel = document.getElementById(`q${q}`);
+                if (sel && !el) el = sel;
+            }
+            
+            if(el) {
+                let container = el.closest('.q-item-block, .q-item, tr, .instruction-box, td, li');
+                if(container) {
+                    let origBg = container.style.backgroundColor;
+                    container.style.backgroundColor = 'rgba(0, 136, 204, 0.2)';
+                    setTimeout(() => { container.style.backgroundColor = origBg; }, 1500);
+                }
+            }
+        }, 100);
+    }
+
+    function isAnswered(q) {
+        // Text/Gap
+        const gap = document.getElementById(`q${q}`);
+        if(gap && gap.tagName === 'INPUT' && gap.value.trim() !== "") return true;
+
+        // Radios
+        const radios = document.querySelectorAll(`input[name="q${q}"]:checked`);
+        if(radios.length > 0) return true;
+
+        return false;
+    }
+
+    function countAnswered(start, end) {
+        let c = 0;
+        for(let i=start; i<=end; i++) {
+           if(isAnswered(i)) c++;
+        }
+        return c;
+    }
+
+    // Settings
+    function toggleSettings() {
+        const m = document.getElementById('settingsMenu');
+        if(m) m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+    }
+    function setSize(c) {
+        document.body.classList.remove('text-reg','text-med','text-lg','text-xl');
+        document.body.classList.add(c);
+        toggleSettings();
+    }
+    function setTheme(c) {
+        document.body.classList.remove('theme-standard','theme-dark','theme-yellow');
+        document.body.classList.add(c);
+        toggleSettings();
+    }
+
+    // Highlighter
+    function setupHighlighter() {
+        const hMenu = document.getElementById('highlightMenu');
+        let savedRange = null;
+        document.addEventListener('mouseup', (e) => {
+            if(e.target.closest('#highlightMenu') || e.target.closest('.settings-menu')) return;
+            const sel = window.getSelection();
+            if(sel.rangeCount > 0 && sel.toString().length > 0) {
+                const node = sel.anchorNode;
+                if(node && node.parentElement && (node.parentElement.closest('.passage-pane') || node.parentElement.closest('.question-pane'))) {
+                    savedRange = sel.getRangeAt(0).cloneRange();
+                    hMenu.style.display = 'block';
+                    hMenu.style.left = e.pageX + 'px';
+                    hMenu.style.top = (e.pageY - 40) + 'px';
+                    return;
+                }
+            }
+            if(hMenu) hMenu.style.display = 'none';
+        });
+        window.applyHighlight = function(c, e) {
+            e.preventDefault(); e.stopPropagation();
+            if(!savedRange) return;
+            const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange);
+            document.designMode = 'on';
+            if(c==='remove') { document.execCommand('removeFormat',false,null); document.execCommand('backColor',false,'transparent'); }
+            else { document.execCommand('backColor',false,c); }
+            document.designMode = 'off'; sel.removeAllRanges(); hMenu.style.display='none';
+        }
+    }
+
+    function submitTest() {
+        let score = 0;
+        const body = document.getElementById('resultsBody'); 
+        if(body) body.innerHTML='';
+        
+        for(let i=1; i<=13; i++) {
+            let uAns = "";
+            let correctStr = answers[i] || "N/A";
+            let isCorrect = false;
+
+            // Standard Check for Inputs, Radios
+            let el = document.getElementById(`q${i}`);
+            if(el && el.tagName === 'INPUT') uAns = el.value;
+            else if(document.querySelector(`input[name="q${i}"]:checked`)) {
+                uAns = document.querySelector(`input[name="q${i}"]:checked`).value;
+            }
+
+            uAns = (uAns || "-").trim().toUpperCase();
+            let correctArr = correctStr.split('|').map(x => x.toUpperCase());
+            
+            if(correctArr.includes(uAns)) {
+               score++;
+               isCorrect = true;
+            }
+            
+            // Highlight DOM Elements
+            if(el && el.tagName === 'INPUT') {
+                el.classList.add(isCorrect ? 'correct' : 'incorrect');
+                if (uAns !== "-") el.placeholder = ""; 
+            } else if (document.querySelector(`input[name="q${i}"]`)) {
+                document.querySelectorAll(`input[name="q${i}"]`).forEach(radio => {
+                    if(radio.checked) radio.parentElement.style.color = isCorrect ? 'green' : 'red';
+                });
+            }
+
+            if(body) {
+               body.innerHTML += `
+               <tr onclick="jumpToQ(${i})" style="cursor:pointer;" title="Click to review this question">
+                <td>${i}</td>
+                <td style="color:${isCorrect===true ? 'green' : 'red'}; font-weight:bold;">${uAns}</td>
+                <td style="font-weight:bold;">${correctArr[0]}</td>
+                <td>${(isCorrect===true)?'Correct':'Incorrect'}</td>
+               </tr>`;
+            }
+        }
+        const scoreEl = document.getElementById('finalScore');
+        if(scoreEl) scoreEl.innerText = `Score: ${score} / 13`;
+        const modal = document.getElementById('resultsModal');
+        if(modal) modal.style.display='flex';
+    }
+
+    // Hide gap input placeholders when typing
+    document.addEventListener('input', function(e) {
+        if(e.target && e.target.classList.contains('gap-input')) {
+            if(e.target.value.length > 0) {
+                e.target.setAttribute('data-placeholder', e.target.placeholder);
+                e.target.placeholder = "";
+            } else {
+                e.target.placeholder = e.target.getAttribute('data-placeholder');
+            }
+        }
+    });
+
+    window.onload = init;
+</script>
+</body>
+</html>

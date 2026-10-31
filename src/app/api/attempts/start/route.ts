@@ -1,0 +1,7 @@
+import { NextRequest, NextResponse } from "next/server";
+import { FieldValue } from "firebase-admin/firestore";
+import { z } from "zod";
+import { requireUser } from "@/lib/auth/server";
+import { adminDb } from "@/lib/firebase/admin";
+const inputSchema = z.object({ contentId:z.string().min(1).max(120), mode:z.enum(["practice", "exam"]).default("practice") });
+export async function POST(request: NextRequest) { try { const user = await requireUser(request); const input = inputSchema.parse(await request.json()); const content = await adminDb.doc(`content/${input.contentId}`).get(); if (!content.exists || content.data()?.status !== "published") return NextResponse.json({ error:"Not found" }, { status:404 }); const versionId = content.data()?.publishedVersion as string; const attempt = adminDb.collection(`users/${user.uid}/attempts`).doc(); const now = new Date(); const duration = Number(content.data()?.estimatedDuration ?? 20) * 60_000; await attempt.set({ contentId:input.contentId, versionId, mode:input.mode, skill:"reading", status:"in_progress", startedAt:FieldValue.serverTimestamp(), deadlineAt:new Date(now.getTime()+duration), draftAnswers:{}, currentSection:"section-1", flags:[], revision:1, retakeOf:null }); return NextResponse.json({ attemptId:attempt.id, versionId, deadlineAt:now.getTime()+duration }); } catch (error) { return NextResponse.json({ error:error instanceof Error && error.message === "UNAUTHENTICATED" ? "Unauthorized" : "Invalid request" }, { status:400 }); } }

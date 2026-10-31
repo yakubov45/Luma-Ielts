@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Reading Simulator - Skyscraper Farming</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+<style>
+    /* --- VARIABLES --- */
+    :root {
+        --base-size: 14px;
+        --header-bg: #ffffff;
+        --header-text: #333333;
+        --bg-app: #f4f4f4;
+        --bg-paper: #ffffff;
+        --text-main: #000000;
+        --border-color: #dcdcdc;
+        --footer-bg: #e0e0e0;
+        --active-q-bg: #333;
+        --active-q-text: #fff;
+        --instruction-bg: #fdfdfd;
+        --instruction-border: #888;
+    }
+
+    /* THEMES */
+    body.theme-dark {
+        --header-bg: #1a1a1a; --header-text: #fff; --bg-app: #333; --bg-paper: #000;
+        --text-main: #ccc; --border-color: #555; --footer-bg: #222;
+        --active-q-bg: #ccc; --active-q-text: #000; --instruction-bg: #222; --instruction-border: #777;
+    }
+    body.theme-yellow {
+        --header-bg: #000; --header-text: #ff0; --bg-app: #111; --bg-paper: #000;
+        --text-main: #ff0; --border-color: #ff0; --footer-bg: #111;
+        --active-q-bg: #ff0; --active-q-text: #000; --instruction-bg: #111; --instruction-border: #ff0;
+    }
+
+    /* SIZES */
+    body.text-reg { --base-size: 14px; }
+    body.text-med { --base-size: 16px; }
+    body.text-lg { --base-size: 18px; }
+    body.text-xl { --base-size: 22px; }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0; padding: 0;
+        font-family: 'Verdana', sans-serif;
+        height: 100vh;
+        display: flex; flex-direction: column;
+        background-color: var(--bg-app);
+        color: var(--text-main);
+        overflow: hidden;
+        font-size: var(--base-size);
+    }
+
+    /* --- HEADER --- */
+    .top-bar {
+        background-color: var(--header-bg);
+        color: var(--header-text);
+        height: 60px;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 20px; flex-shrink: 0;
+        border-bottom: 1px solid var(--border-color);
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .top-left { font-weight: bold; font-size: 1.1em; }
+    
+    .timer-group {
+        position: absolute; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 15px;
+    }
+    .timer { font-size: 1.4em; font-weight: bold; color: #d32f2f; font-family: monospace; }
+    
+    .telegram-link {
+        text-decoration: none; color: #0088cc; font-size: 0.9em;
+        display: flex; align-items: center; gap: 5px;
+        background: rgba(0, 136, 204, 0.1); padding: 4px 10px; border-radius: 15px;
+        transition: background 0.2s;
+    }
+    .telegram-link:hover { background: rgba(0, 136, 204, 0.2); }
+
+    /* Settings Menu */
+    .settings-menu {
+        position: absolute; top: 60px; right: 10px;
+        background: var(--header-bg); border: 1px solid var(--border-color);
+        padding: 15px; border-radius: 4px; display: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1000; width: 220px;
+        color: var(--header-text);
+    }
+    .s-btn { 
+        display: block; width: 100%; padding: 8px 10px; cursor: pointer; font-size: 13px; 
+        border: 1px solid var(--border-color); background: var(--bg-paper); 
+        color: var(--text-main); margin-bottom: 6px; text-align: left; border-radius: 3px;
+    }
+    .s-btn:hover { background: var(--border-color); }
+
+    /* --- INSTRUCTION BANNER --- */
+    .instruction-banner {
+        background-color: #f0f0f0; padding: 8px 20px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.95em; color: #333; flex-shrink: 0;
+    }
+    body.theme-dark .instruction-banner { background-color: #333; color: #fff; }
+    body.theme-yellow .instruction-banner { background-color: #222; color: #ff0; border-color: #ff0; }
+
+    /* --- MAIN LAYOUT --- */
+    .main-container { display: flex; flex: 1; overflow: hidden; background-color: var(--bg-paper); position: relative; }
+    .passage-pane, .question-pane { padding: 30px; overflow-y: auto; line-height: 1.7; outline: none; height: 100%; }
+    .passage-pane { width: 50%; border-right: 2px solid var(--border-color); font-family: 'Times New Roman', Times, serif; font-size: 1.1em; }
+    .question-pane { flex: 1; font-family: 'Verdana', sans-serif; }
+    .passage-content, .question-content { display: none; }
+    .passage-content.active, .question-content.active { display: block; }
+    
+    .passage-pane h2 { font-size: 1.5em; margin-bottom: 25px; font-weight: bold; color: var(--text-main); }
+    .passage-pane p { margin-bottom: 15px; text-align: justify; }
+    .paragraph-label { font-weight: bold; margin-right: 10px; font-size: 1.1em; float: left; }
+    
+    .divider { width: 8px; background: #f0f0f0; cursor: col-resize; border-left: 1px solid #ddd; border-right: 1px solid #ddd; z-index: 10; }
+    body.theme-dark .divider { background: #444; border-color: #555; }
+    body.theme-yellow .divider { background: #222; border-color: #ff0; }
+
+    /* --- DRAG & DROP STYLES --- */
+    .drop-zone-container { display: flex; align-items: center; margin-bottom: 15px; gap: 15px; margin-top: 25px; }
+    .q-num-box-dz { display: inline-block; border: 1px solid var(--text-main); padding: 5px 8px; font-weight: bold; text-align: center; color: var(--text-main); flex-shrink: 0; background: var(--header-bg);}
+    
+    .drop-zone { 
+        flex: 1; min-height: 44px; border: 2px dashed #aaa; border-radius: 4px; 
+        display: flex; align-items: center; padding: 4px 10px; color: #888; 
+        font-style: italic; transition: all 0.2s; background: rgba(0,0,0,0.02);
+    }
+    .drop-zone.drag-over { background: rgba(0, 136, 204, 0.1); border-color: #0088cc; border-style: solid; }
+    .drop-zone.cell-correct { background-color: rgba(0, 200, 0, 0.15) !important; border-color: green; border-style: solid; color: var(--text-main); font-style: normal; }
+    .drop-zone.cell-incorrect { background-color: rgba(255, 0, 0, 0.15) !important; border-color: red; border-style: solid; color: var(--text-main); font-style: normal;}
+
+    body.theme-dark .drop-zone { border-color: #666; color: #aaa; background: rgba(255,255,255,0.05); }
+    body.theme-yellow .drop-zone { border-color: #ff0; color: #aa0; background: rgba(255,255,0,0.05); }
+
+    .heading-pool-container { border: 1px solid var(--border-color); padding: 15px; margin-bottom: 30px; background: var(--header-bg); }
+    .heading-pool { display: flex; flex-direction: column; gap: 8px; min-height: 100px; padding: 10px; border: 1px dashed var(--border-color); border-radius: 4px; transition: background 0.2s; }
+    .heading-pool.drag-over { background: rgba(0, 136, 204, 0.05); }
+    
+    .draggable-heading { 
+        padding: 10px 12px; border: 1px solid #ccc; background: #fff; cursor: grab; 
+        border-radius: 4px; font-weight: normal; color: #333; display: flex; align-items: baseline; box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+    }
+    .draggable-heading:active { cursor: grabbing; }
+    .draggable-heading.dragging { opacity: 0.5; }
+    .draggable-heading .roman { font-weight: bold; width: 35px; flex-shrink: 0; color: #0088cc; }
+
+    body.theme-dark .draggable-heading { background: #444; border-color: #666; color: #fff; }
+    body.theme-dark .draggable-heading .roman { color: #44ccff; }
+    body.theme-yellow .draggable-heading { background: #222; border-color: #ff0; color: #ff0; }
+    body.theme-yellow .draggable-heading .roman { color: #ff0; }
+
+    /* --- INSTRUCTION BOXES & LISTS --- */
+    .instruction-box { border: 1px solid var(--instruction-border); background-color: var(--instruction-bg); padding: 15px; margin-bottom: 25px; font-size: 0.9em; }
+    .instruction-box h3 { margin: 0 0 5px 0; font-size: 1em; text-transform: uppercase; }
+    .instruction-box p { margin: 5px 0 0 0; }
+    
+    .q-item-block { margin-bottom: 20px; transition: background-color 0.3s; }
+    .q-num-plain { display: inline-block; min-width: 20px; font-weight: bold; margin-right: 5px; color: var(--text-main); flex-shrink: 0;}
+    
+    .gap-input { 
+        text-align: center; font-weight: bold; 
+        border-bottom: 2px solid #333; border-top:none; border-left:none; border-right:none; 
+        background: transparent; color: var(--text-main); font-size: inherit; margin: 0 5px;
+    }
+    .gap-input.long { width: 200px; }
+    .gap-input.short { width: 50px; }
+    .gap-input:focus { outline: none; border-bottom: 2px solid #0088cc; }
+    .gap-input.correct { color: green !important; border-bottom-color: green !important; }
+    .gap-input.incorrect { color: red !important; border-bottom-color: red !important; }
+    body.theme-dark .gap-input { border-bottom-color: #ccc; }
+    body.theme-yellow .gap-input { border-bottom-color: #ff0; }
+
+    /* --- MATRIX TABLE STYLES --- */
+    .matrix-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; background: var(--header-bg); }
+    .matrix-table th { padding: 10px; border: 1px solid var(--border-color); text-align: center; background: #e9e9e9; color: #333; font-weight: bold; }
+    .matrix-table td { padding: 10px; border: 1px solid var(--border-color); text-align: center; vertical-align: middle; transition: background-color 0.3s; }
+    .matrix-table td.m-text { text-align: left; }
+    .matrix-table td.m-qnum { font-weight: bold; width: 30px; }
+    .matrix-table input[type="radio"] { transform: scale(1.3); cursor: pointer; margin: 0; }
+    
+    body.theme-dark .matrix-table th { background: #444; color: #fff; border-color: #555; }
+    body.theme-yellow .matrix-table th { background: #333; color: #ff0; border-color: #ff0; }
+
+    .tf-options { 
+        margin-left: 25px; 
+        margin-top: 10px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 8px; 
+    }
+    .tf-options label { 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        transition: background-color 0.2s; 
+        cursor: pointer; 
+        width: fit-content; 
+    }
+    .tf-options input[type="radio"], .tf-options input[type="checkbox"] { 
+        transform: scale(1.2); 
+        margin-right: 8px; 
+        cursor: pointer; 
+    }
+
+    .cell-correct { background-color: rgba(0, 200, 0, 0.2) !important; }
+    .cell-incorrect { background-color: rgba(255, 0, 0, 0.2) !important; }
+
+    .summary-text { line-height: 2.2; }
+    
+    /* --- FOOTER --- */
+    .footer-bar { height: 60px; background-color: var(--footer-bg); border-top: 1px solid var(--border-color); display: flex; align-items: stretch; padding: 0; flex-shrink: 0; }
+    .footer-parts-container { display: flex; flex: 1; width: 100%; }
+    .footer-part-item { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 20px; cursor: pointer; border-right: 1px solid #ccc; transition: background 0.2s; }
+    body.theme-dark .footer-part-item { border-right-color: #555; }
+    body.theme-yellow .footer-part-item { border-right-color: #ff0; }
+    .footer-part-item:hover { background-color: rgba(0,0,0,0.05); }
+    body.theme-dark .footer-part-item:hover { background-color: rgba(255,255,255,0.1); }
+    body.theme-yellow .footer-part-item:hover { background-color: #222; }
+    
+    .part-content-wrapper { display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%; }
+    .p-label { font-weight: bold; font-size: 15px; color: var(--text-main); white-space: nowrap; }
+    .p-count { font-weight: bold; font-size: 13px; color: #0088cc; white-space: nowrap; } 
+    body.theme-dark .p-count { color: #44ccff; }
+    body.theme-yellow .p-count { color: #ff0; }
+
+    .q-numbers-list { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; margin-top: 4px; padding-bottom: 2px; }
+    .q-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 1px solid #999; cursor: pointer; color: #333; background: #fff; border-radius: 2px; font-size: 12px; flex-shrink: 0; }
+    .q-btn:hover { background: #ccc; }
+    .q-btn.answered { background-color: var(--active-q-bg); color: var(--active-q-text); border-color: var(--text-main); font-weight: bold; }
+
+    .submit-container { width: 60px; background: #ccc; display: flex; align-items: center; justify-content: center; cursor: pointer; border-left: 1px solid #999; }
+    .submit-container:hover { background: #bbb; }
+    .submit-icon { font-size: 20px; color: #333; }
+    body.theme-dark .submit-container { background: #444; border-left-color: #555; }
+    body.theme-dark .submit-icon { color: #fff; }
+    body.theme-yellow .submit-container { background: #333; border-left-color: #ff0; }
+    body.theme-yellow .submit-icon { color: #ff0; }
+
+    /* --- HIGHLIGHTER --- */
+    #highlightMenu { position: absolute; display: none; background: #fff; padding: 5px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 9999; }
+    .hl-color { width: 24px; height: 24px; display: inline-block; margin: 0 4px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; }
+
+    /* --- MODAL --- */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items: center; justify-content: center; }
+    .modal-content { background: #fff; width: 85%; max-width: 900px; height: 85%; border-radius: 4px; display: flex; flex-direction: column; color: #000; padding: 20px; }
+    .modal-header { display: flex; justify-content: space-between; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+    .modal-body { flex: 1; overflow-y: auto; }
+    .result-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .result-table th, .result-table td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    .result-table tbody tr:hover { background-color: rgba(0,0,0,0.05); }
+    body.theme-dark .result-table tbody tr:hover { background-color: rgba(255,255,255,0.1); }
+    body.theme-yellow .result-table tbody tr:hover { background-color: rgba(255,255,0,0.2); }
+    .status-correct { color: green; font-weight: bold; }
+    .status-incorrect { color: red; font-weight: bold; }
+</style>
+</head>
+<body class="theme-standard text-reg">
+
+    <div class="top-bar">
+        <div class="top-left">IELTS Reading test simulator</div>
+        <div class="timer-group">
+            <div class="timer" id="timer">00:00</div>
+            <a href="https://t.me/khamidovs_ielts" target="_blank" class="telegram-link"><i class="fab fa-telegram-plane"></i> @khamidovs_ielts</a>
+        </div>
+        <div style="font-size:18px; cursor:pointer; padding:5px;" onclick="toggleSettings()"><i class="fas fa-bars"></i></div>
+        <div class="settings-menu" id="settingsMenu">
+            <h4 style="margin:0 0 10px 0; border-bottom: 1px solid var(--border-color); padding-bottom:5px;">Settings</h4>
+            <div style="margin-bottom:15px;">
+                <div style="font-weight:bold; margin-bottom:5px;">Text Size</div>
+                <div style="display:flex; flex-direction:column;">
+                    <button class="s-btn" onclick="setSize('text-reg')">Standard</button>
+                    <button class="s-btn" onclick="setSize('text-med')">Medium</button>
+                    <button class="s-btn" onclick="setSize('text-lg')">Large</button>
+                    <button class="s-btn" onclick="setSize('text-xl')">Extra Large</button>
+                </div>
+            </div>
+            <div>
+                <div style="font-weight:bold; margin-bottom:5px;">Color Mode</div>
+                <div style="display:flex; flex-direction:column;">
+                    <button class="s-btn" onclick="setTheme('theme-standard')">Standard</button>
+                    <button class="s-btn" onclick="setTheme('theme-dark')">White on Black</button>
+                    <button class="s-btn" onclick="setTheme('theme-yellow')">Yellow on Black</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="instruction-banner" id="topInstruction">You should spend about 20 minutes on Questions 14-26, which are based on Reading Passage 2.</div>
+
+    <div class="main-container">
+        <!-- PASSAGE PANE -->
+        <div class="passage-pane" id="passagePane">
+            <div id="p-content-14" class="passage-content active">
+                <h2>Skyscraper Farming</h2>
+                <p>With a global food crisis predicted, a group of scientist is advocating an innovative alternative to conventional farming that could radically transform the way that food is produced.</p>
+
+                <div class="drop-zone-container">
+                    <span class="q-num-box-dz">14</span>
+                    <div class="drop-zone" id="dz-q14" data-q="14" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">Drop heading here for Paragraph A</div>
+                </div>
+                <p><span class="paragraph-label">A</span> Today's environment scientists are in no doubt that world's resources of fertile soil are rapidly deteriorating, and new land for agriculture is becoming ever more sparse. Intensive farming urbanization, desertification and sea-level rises are all putting growing pressure on the planet's agricultural land and therefore on food supplies. Currently 24 per cent of the world's 11.5 million hectares of cultivated land has already undergone human-induced soil degradation particularly through erosion, according to a recent study by the UK Government Office for Science.</p>
+
+                <div class="drop-zone-container">
+                    <span class="q-num-box-dz">15</span>
+                    <div class="drop-zone" id="dz-q15" data-q="15" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">Drop heading here for Paragraph B</div>
+                </div>
+                <p><span class="paragraph-label">B</span> The global population is expected to exceed nine billion by 2050 – up a third from today's level and studies suggest that food production will have to go up by 70 per cent if we are to feed all of those new mouths. This means that scientists will have to develop new ways of growing crops if we are to avoid a humanitarian crisis. Indeed, UK food and Agriculture Organization figures suggest that the number of undernourished people is already growing. And with escalating climate change, crop yields in many areas have been protected.</p>
+
+                <div class="drop-zone-container">
+                    <span class="q-num-box-dz">16</span>
+                    <div class="drop-zone" id="dz-q16" data-q="16" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">Drop heading here for Paragraph C</div>
+                </div>
+                <p><span class="paragraph-label">C</span> With this in mind, some scientists and agricultural experts are advocating an innovative alternative to traditional farming whereby skyscrapers packed with shelf-based systems for growing vegetables on each story – known as 'vertical farms' – could hold the key to revolutionizing agriculture. Columbia University professor Dickson Despommier claims that vertical farming could boost crop yields many times over. A single 20-storey vertical farm could theoretically feed 50,000 people, according to Despommier. And if the theory translates into reality as proposed, 160 skyscraper-sized vertical farms could feed the entire population of New York City, while 180 would be needed to feed London, 289 to feed Cairo and 302 to feed Kolkata.</p>
+
+                <div class="drop-zone-container">
+                    <span class="q-num-box-dz">17</span>
+                    <div class="drop-zone" id="dz-q17" data-q="17" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">Drop heading here for Paragraph D</div>
+                </div>
+                <p><span class="paragraph-label">D</span> It's a compelling vision, and one that has already been put into practice in Asia, Albeit on a smaller scale 'But there are problems such as initial investment and operating costs are too great.' says a spokesman for Japan's Ministry of Agriculture, Forestry and Fisheries. Nevertheless Tokyo-based mushroom producer Hokuto Corporation is a model example of how a vertical farm can be profitable. With 28 vertical mushroom farms operating across the country, it produces some 68,000 tons of mushrooms annually. Vertical mushroom farms have more advantages than ground-level farms, 'says Hokuto's Ted Yamanoko. Yamanoko goes on to highlight the relative cost-effectiveness of his organization's farming practices together with reduced emissions of greenhouse gases.</p>
+
+                <div class="drop-zone-container">
+                    <span class="q-num-box-dz">18</span>
+                    <div class="drop-zone" id="dz-q18" data-q="18" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">Drop heading here for Paragraph E</div>
+                </div>
+                <p><span class="paragraph-label">E</span> And the impact vertical farms could extend beyond feeding established urban populations. Despommier sees them as being capable of helping centers of displaced persons – such as refugee camps – in much the same way that Mobile Army Surgical Hospital (MASH) units are deployed in emergency situations. "Developing an emergency-response system for crop production inside specially constructed modular and highly transportable greenhouses would allow for humanitarian interventions, at least for refugees that are forced out of their countries by political turmoil', he says. 'If you have three or four storeys of food already growing some place, they could become mobile units that could be picked up by helicopters and dropped into the middle of a crisis zone. The food would be ready to pick and eat. It could be designed to supply people with all the nutrition they need to make it through the crisis.'</p>
+
+                <div class="drop-zone-container">
+                    <span class="q-num-box-dz">19</span>
+                    <div class="drop-zone" id="dz-q19" data-q="19" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">Drop heading here for Paragraph F</div>
+                </div>
+                <p><span class="paragraph-label">F</span> But it isn't only about increasing food production, Despommier is concerned about the harm which farm has done to the world's landscape over a relatively short time span, particularly the elimination of hardwood forests. 'Farming is only 12,000 years old.' He points out 'We have been a species for over 200,000 years. Producing food in tall buildings will allow us for the first time to feed everyone on earth and still return land to its original ecological function.' Natalie Jeremijenko, associate professor at New York University, agrees. 'The challenge that we have now is how we can design urban agriculture systems that not only reduce food miles, but also improve the world's ecosystems.' she says. By significantly reducing the amount of land required for food production, vertical farms could help to enrich biodiversity. And according to Jeremijenko, this can, in turn, help to improve the productivity of conventional farms, as the health of agricultural land is often tied to the health of the surrounding ecosystems. Furthermore, vertical farming could dramatically cut the utilization of fossil fuels. And also reduce geopolitical tensions in countries where poor farming conditions cause conflict and malnutrition.</p>
+
+            </div>
+        </div>
+
+        <div class="divider" id="divider"></div>
+
+        <div class="question-pane" id="questionPane">
+            <div id="q-content-14" class="question-content active">
+                
+                <div class="instruction-box">
+                    <h3>Questions 14 - 19</h3>
+                    <p>Reading passage 2 has six paragraphs, <strong>A-F</strong></p>
+                    <p>Choose the correct heading for each paragraph from the list of headings below.</p>
+                    <p><strong>Drag and drop</strong> the correct heading from the list below into the space above the corresponding paragraph in the text.</p>
+                </div>
+                
+                <div class="heading-pool-container">
+                    <h4 style="margin-top: 0; margin-bottom: 10px;">List of Headings</h4>
+                    <div id="heading-pool" class="heading-pool" ondragover="allowDrop(event)" ondrop="drop(event)" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                        <div class="draggable-heading" draggable="true" ondragstart="drag(event)" id="h-i" data-val="I"><span class="roman">i</span> Potential production capacities of vertical farms</div>
+                        <div class="draggable-heading" draggable="true" ondragstart="drag(event)" id="h-ii" data-val="II"><span class="roman">ii</span> Opposition to new ideas about food production</div>
+                        <div class="draggable-heading" draggable="true" ondragstart="drag(event)" id="h-iii" data-val="III"><span class="roman">iii</span> A successful application of vertical farming technology</div>
+                        <div class="draggable-heading" draggable="true" ondragstart="drag(event)" id="h-iv" data-val="IV"><span class="roman">iv</span> The potential to provide urgent relief</div>
+                        <div class="draggable-heading" draggable="true" ondragstart="drag(event)" id="h-v" data-val="V"><span class="roman">v</span> The original inspiration for vertical farming</div>
+                        <div class="draggable-heading" draggable="true" ondragstart="drag(event)" id="h-vi" data-val="VI"><span class="roman">vi</span> Various environmental benefits of vertical farming</div>
+                        <div class="draggable-heading" draggable="true" ondragstart="drag(event)" id="h-vii" data-val="VII"><span class="roman">vii</span> An increasing problem for farmers worldwide</div>
+                        <div class="draggable-heading" draggable="true" ondragstart="drag(event)" id="h-viii" data-val="VIII"><span class="roman">viii</span> A return to traditional farming methods</div>
+                        <div class="draggable-heading" draggable="true" ondragstart="drag(event)" id="h-ix" data-val="IX"><span class="roman">ix</span> A rising demand of food</div>
+                    </div>
+                </div>
+
+                <div class="instruction-box" style="margin-top: 35px;">
+                    <h3>Questions 20 - 22</h3>
+                    <p>Complete the sentence below</p>
+                    <p>Choose <strong>NO MORE THAN TWO WORDS</strong> from the passage for each answer.</p>
+                    <p>Write your answers in boxes 20-22 on your answer sheet.</p>
+                </div>
+                
+                <div class="q-item-block" style="line-height: 2.2;">
+                    <div style="margin-bottom: 15px;">
+                        <span class="q-num-plain">20</span> A UK government study found that <input type="text" id="q20" class="gap-input long" oninput="updateAnswerStatus(20)"> is a significant factor contributing to worldwide levels of soil degradation.
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <span class="q-num-plain">21</span> Disadvantages of vertical farming projects include the expense of setting them up, as well as their high <input type="text" id="q21" class="gap-input long" oninput="updateAnswerStatus(21)">.
+                    </div>
+                    <div style="margin-bottom: 15px;">
+                        <span class="q-num-plain">22</span> <input type="text" id="q22" class="gap-input long" oninput="updateAnswerStatus(22)"> could potentially be used to take vertical farming facilities to areas where there is a critical food shortage.
+                    </div>
+                </div>
+
+                <div class="instruction-box" style="margin-top: 35px;">
+                    <h3>Questions 23 - 26</h3>
+                    <p>Look at the following statements (Questions 23-26) and the list of people below</p>
+                    <p>Match each statement with the correct person, <strong>A, B or C</strong></p>
+                    <p>Write the correct letter <strong>A, B or C</strong> in boxes 23-26 on your answer sheet.</p>
+                    <p><em><strong>NB</strong> you may use any letter more than once.</em></p>
+                </div>
+
+                <div style="border: 1px solid var(--border-color); padding: 15px; margin-bottom: 20px; background: var(--header-bg);">
+                    <h4 style="margin-top: 0; margin-bottom: 10px;">List of people</h4>
+                    <ul style="list-style-type: none; padding-left: 0; line-height: 1.8; margin-bottom: 0;">
+                        <li><strong>A</strong> Dickson Despommier</li>
+                        <li><strong>B</strong> Ted Yamanoko</li>
+                        <li><strong>C</strong> Natalie Jeremijenko</li>
+                    </ul>
+                </div>
+
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th>A</th><th>B</th><th>C</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="m-qnum">23</td>
+                            <td class="m-text">Vertical farming can have financial benefits.</td>
+                            <td><input type="radio" name="q23" value="A" onchange="updateAnswerStatus(23)"></td>
+                            <td><input type="radio" name="q23" value="B" onchange="updateAnswerStatus(23)"></td>
+                            <td><input type="radio" name="q23" value="C" onchange="updateAnswerStatus(23)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">24</td>
+                            <td class="m-text">Traditional farming has had a negative effect on the natural world.</td>
+                            <td><input type="radio" name="q24" value="A" onchange="updateAnswerStatus(24)"></td>
+                            <td><input type="radio" name="q24" value="B" onchange="updateAnswerStatus(24)"></td>
+                            <td><input type="radio" name="q24" value="C" onchange="updateAnswerStatus(24)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">25</td>
+                            <td class="m-text">Vertical farming could dramatically increase world food production.</td>
+                            <td><input type="radio" name="q25" value="A" onchange="updateAnswerStatus(25)"></td>
+                            <td><input type="radio" name="q25" value="B" onchange="updateAnswerStatus(25)"></td>
+                            <td><input type="radio" name="q25" value="C" onchange="updateAnswerStatus(25)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">26</td>
+                            <td class="m-text">Traditional farms may benefit from wider use of vertical farming.</td>
+                            <td><input type="radio" name="q26" value="A" onchange="updateAnswerStatus(26)"></td>
+                            <td><input type="radio" name="q26" value="B" onchange="updateAnswerStatus(26)"></td>
+                            <td><input type="radio" name="q26" value="C" onchange="updateAnswerStatus(26)"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bar" id="footerBar">
+        <!-- Footer Nav injected via JS -->
+    </div>
+
+    <!-- Highlight Menu -->
+    <div id="highlightMenu">
+        <span class="hl-color" style="background:#ffff00" onmousedown="applyHighlight('yellow', event)"></span>
+        <span class="hl-color" style="background:#44ff44" onmousedown="applyHighlight('#44ff44', event)"></span>
+        <span class="hl-color" style="background:#44ccff" onmousedown="applyHighlight('#44ccff', event)"></span>
+        <span class="hl-color" style="background:#fff; color:#333; text-align:center; line-height:22px; font-weight:bold; font-size:12px; border: 1px solid #ccc;" onmousedown="applyHighlight('remove', event)">X</span>
+    </div>
+
+    <!-- Results Modal -->
+    <div class="modal-overlay" id="resultsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="margin: 0;">Test Results</h2>
+                <button onclick="document.getElementById('resultsModal').style.display='none'" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h1 style="text-align:center; margin-top: 0;" id="finalScore"></h1>
+                <table class="result-table">
+                    <thead><tr><th>Q</th><th>Your Answer</th><th>Correct Answer</th><th>Status</th></tr></thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+            <div style="padding: 20px; text-align:center; border-top: 1px solid #ddd;">
+                <button onclick="document.getElementById('resultsModal').style.display='none'" style="padding:10px 20px; cursor:pointer; font-size: 16px; background: #000; color: #fff; border: none; border-radius: 4px;">Review Mistakes</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- TIMER LOGIC (Stopwatch - Counts Up) ---
+    let time = 0; 
+    const timerInterval = setInterval(() => {
+        time++;
+        const m = Math.floor(time / 60).toString().padStart(2, '0');
+        const s = (time % 60).toString().padStart(2, '0');
+        const el = document.getElementById('timer');
+        if(el) el.innerText = `${m}:${s}`;
+    }, 1000);
+
+    const partsConfig = {
+        14: { start: 14, end: 26, instr: "You should spend about 20 minutes on Questions 14-26, which are based on Reading Passage 2." }
+    };
+    let currentPart = 14;
+
+    // ANSWER KEY
+    const answers = { 
+        14:'VII', 
+        15:'IX', 
+        16:'I', 
+        17:'III', 
+        18:'IV', 
+        19:'VI', 
+        20:'EROSION', 
+        21:'OPERATING COSTS', 
+        22:'HELICOPTERS', 
+        23:'B', 
+        24:'A', 
+        25:'A', 
+        26:'C'
+    };
+
+    function init() {
+        renderFooter();
+        
+        const divider = document.getElementById('divider');
+        const pPane = document.getElementById('passagePane');
+        let isDrag = false;
+        if(divider && pPane) {
+            divider.addEventListener('mousedown', (e) => { isDrag = true; e.preventDefault(); });
+            document.addEventListener('mouseup', () => isDrag = false);
+            document.addEventListener('mousemove', (e) => {
+                if(isDrag) {
+                    let pct = (e.clientX / window.innerWidth) * 100;
+                    if(pct > 20 && pct < 80) pPane.style.width = pct + '%';
+                }
+            });
+        }
+        
+        setupHighlighter();
+    }
+
+    // --- HTML5 Drag and Drop Functions ---
+    function drag(ev) {
+        ev.dataTransfer.setData("text", ev.target.id);
+        ev.target.classList.add('dragging');
+    }
+
+    function allowDrop(ev) {
+        ev.preventDefault();
+    }
+
+    function dragEnter(ev) {
+        ev.preventDefault();
+        let target = ev.target.closest('.drop-zone, .heading-pool');
+        if(target) target.classList.add('drag-over');
+    }
+
+    function dragLeave(ev) {
+        let target = ev.target.closest('.drop-zone, .heading-pool');
+        if(target) target.classList.remove('drag-over');
+    }
+
+    function drop(ev) {
+        ev.preventDefault();
+        let target = ev.target.closest('.drop-zone, .heading-pool');
+        if(target) target.classList.remove('drag-over');
+
+        var data = ev.dataTransfer.getData("text");
+        var draggedEl = document.getElementById(data);
+        if(!draggedEl) return;
+        draggedEl.classList.remove('dragging');
+
+        if (target && target.classList.contains('drop-zone')) {
+            // Return existing heading to pool if occupied
+            if (target.children.length > 0 && target.children[0] !== draggedEl) {
+                document.getElementById('heading-pool').appendChild(target.children[0]);
+            }
+            if (target.innerText.includes('Drop heading here')) {
+                target.innerText = '';
+            }
+            target.appendChild(draggedEl);
+            updateAnswerStatus(target.getAttribute('data-q'));
+            
+        } else if (target && target.classList.contains('heading-pool')) {
+            target.appendChild(draggedEl);
+            for(let i=14; i<=19; i++) updateAnswerStatus(i);
+        }
+        
+        // Restore placeholder text for empty drop zones
+        document.querySelectorAll('.drop-zone').forEach(dz => {
+            if(dz.children.length === 0) {
+                dz.innerText = `Drop heading here for Paragraph ${String.fromCharCode(65 + parseInt(dz.getAttribute('data-q')) - 14)}`;
+            }
+        });
+    }
+
+    function setPart(p) {
+        currentPart = p;
+        document.querySelectorAll('.passage-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.question-content').forEach(el => el.classList.remove('active'));
+        const pContent = document.getElementById(`p-content-${p}`);
+        const qContent = document.getElementById(`q-content-${p}`);
+        if(pContent) pContent.classList.add('active');
+        if(qContent) qContent.classList.add('active');
+        
+        const pPane = document.getElementById('passagePane');
+        const qPane = document.getElementById('questionPane');
+        if(pPane) pPane.scrollTop = 0;
+        if(qPane) qPane.scrollTop = 0;
+        
+        document.getElementById('topInstruction').innerText = partsConfig[p].instr;
+        renderFooter();
+    }
+
+    // --- IMMEDIATE UPDATE LOGIC ---
+    function updateAnswerStatus(q) {
+        const btn = document.getElementById(`btn-q${q}`);
+        if(isAnswered(q)) {
+            if(btn) btn.classList.add('answered');
+        } else {
+            if(btn) btn.classList.remove('answered');
+        }
+        updateProgressCount();
+    }
+
+    function updateProgressCount() {
+        for(let p=14; p<=14; p+=12) { 
+            const range = partsConfig[14];
+            const total = range.end - range.start + 1;
+            const answeredCount = countAnswered(range.start, range.end);
+            const countEl = document.getElementById(`p-count-14`);
+            if (countEl) countEl.innerText = `${answeredCount} of ${total}`;
+        }
+    }
+
+    function renderFooter() {
+        const footer = document.getElementById('footerBar');
+        if(!footer) return;
+        footer.innerHTML = ''; 
+
+        const partsContainer = document.createElement('div');
+        partsContainer.className = 'footer-parts-container';
+
+        const range = partsConfig[14];
+        const total = range.end - range.start + 1;
+        const answeredCount = countAnswered(range.start, range.end);
+
+        const partItem = document.createElement('div');
+        partItem.className = 'footer-part-item';
+        partItem.onclick = () => setPart(14);
+
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'part-content-wrapper';
+
+        const label = document.createElement('span');
+        label.className = 'p-label';
+        label.innerText = `Questions ${range.start}-${range.end}`;
+        contentWrapper.appendChild(label);
+
+        const list = document.createElement('div');
+        list.className = 'q-numbers-list';
+        for(let q = range.start; q <= range.end; q++) {
+            const btn = document.createElement('div');
+            btn.className = 'q-btn';
+            btn.innerText = q;
+
+            btn.id = `btn-q${q}`;
+            if(isAnswered(q)) btn.classList.add('answered');
+            btn.onclick = (e) => { e.stopPropagation(); scrollToQ(q); };
+            list.appendChild(btn);
+        }
+        contentWrapper.appendChild(list);
+        
+        const count = document.createElement('span');
+        count.className = 'p-count';
+        count.id = `p-count-14`;
+        count.innerText = `${answeredCount} of ${total}`;
+        contentWrapper.appendChild(count);
+
+        partItem.appendChild(contentWrapper);
+        partsContainer.appendChild(partItem);
+        
+        footer.appendChild(partsContainer);
+
+        const subContainer = document.createElement('div');
+        subContainer.className = 'submit-container';
+        subContainer.onclick = submitTest;
+        subContainer.innerHTML = '<i class="fas fa-check submit-icon"></i>';
+        footer.appendChild(subContainer);
+    }
+
+    function scrollToQ(q) {
+        let targetId = `q${q}`;
+
+        // Handle Drag and Drop Scrolling to the passage drop zone
+        if (q >= 14 && q <= 19) {
+            let dz = document.getElementById(`dz-q${q}`);
+            if (dz) {
+                dz.scrollIntoView({behavior:'smooth', block:'center'});
+                return;
+            }
+        }
+
+        const el = document.getElementById(targetId);
+        if(el) {
+            el.scrollIntoView({behavior:'smooth', block:'center'});
+        } else {
+             let inp = document.getElementById(`q${q}_in`) || document.querySelector(`input[name="q${q}"]`);
+             if(!inp) { 
+                 const slot = document.querySelector(`.drop-slot[data-q="${q}"]`);
+                 if(slot) {
+                    slot.scrollIntoView({behavior:'smooth', block:'center'});
+                    return;
+                 }
+                 const sel = document.getElementById(`q${q}`);
+                 if (sel) {
+                    sel.scrollIntoView({behavior:'smooth', block:'center'});
+                    return;
+                 }
+                 return;
+             }
+             if(inp) inp.closest('tr, .q-item, .instruction-box, td, .q-item-block, .tf-question, .tf-options').scrollIntoView({behavior:'smooth', block:'center'});
+        }
+    }
+
+    function jumpToQ(q) {
+        document.getElementById('resultsModal').style.display = 'none';
+        
+        setTimeout(() => {
+            scrollToQ(q);
+            let el = null;
+            if (q >= 14 && q <= 19) {
+                el = document.getElementById(`dz-q${q}`);
+            } else {
+                let targetId = `q${q}`;
+                el = document.getElementById(targetId) || document.getElementById(`q${q}_in`) || document.querySelector(`input[name="q${q}"]`);
+                if(!el) {
+                    const slot = document.querySelector(`.drop-slot[data-q="${q}"]`);
+                    if(slot) el = slot;
+                    
+                    const sel = document.getElementById(`q${q}`);
+                    if (sel && !el) el = sel;
+                }
+            }
+            
+            if(el) {
+                let container = el.closest('tr, .q-item-block, .q-item, .instruction-box, td, p, li, .summary-text, div.tf-question, .tf-options, .drop-zone-container');
+                if(container) {
+                    let origBg = container.style.backgroundColor;
+                    container.style.backgroundColor = 'rgba(0, 136, 204, 0.2)';
+                    setTimeout(() => { container.style.backgroundColor = origBg; }, 1500);
+                } else if (el.classList.contains('drop-zone')) {
+                    let origBg = el.style.backgroundColor;
+                    el.style.backgroundColor = 'rgba(0, 136, 204, 0.2)';
+                    setTimeout(() => { el.style.backgroundColor = origBg; }, 1500);
+                }
+            }
+        }, 100);
+    }
+
+    function isAnswered(q) {
+        if (q >= 14 && q <= 19) {
+            const dz = document.getElementById(`dz-q${q}`);
+            // Considered answered if there's a dragged heading
+            if (dz && dz.querySelector('.draggable-heading') !== null) return true;
+            return false;
+        }
+
+        const gap = document.getElementById(`q${q}`);
+        if(gap && gap.tagName === 'INPUT' && gap.value.trim() !== "") return true;
+
+        const radios = document.querySelectorAll(`input[name="q${q}"]:checked`);
+        if(radios.length > 0) return true;
+
+        return false;
+    }
+
+    function countAnswered(start, end) {
+        let c = 0;
+        for(let i=start; i<=end; i++) {
+           if(isAnswered(i)) c++;
+        }
+        return c;
+    }
+
+    function toggleSettings() {
+        const m = document.getElementById('settingsMenu');
+        if(m) m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+    }
+    function setSize(c) {
+        document.body.classList.remove('text-reg','text-med','text-lg','text-xl');
+        document.body.classList.add(c);
+        toggleSettings();
+    }
+    function setTheme(c) {
+        document.body.classList.remove('theme-standard','theme-dark','theme-yellow');
+        document.body.classList.add(c);
+        toggleSettings();
+    }
+
+    function setupHighlighter() {
+        const hMenu = document.getElementById('highlightMenu');
+        let savedRange = null;
+        document.addEventListener('mouseup', (e) => {
+            if(e.target.closest('#highlightMenu') || e.target.closest('.settings-menu')) return;
+            const sel = window.getSelection();
+            if(sel.rangeCount > 0 && sel.toString().length > 0) {
+                const node = sel.anchorNode;
+                if(node && node.parentElement && (node.parentElement.closest('.passage-pane') || node.parentElement.closest('.question-pane'))) {
+                    savedRange = sel.getRangeAt(0).cloneRange();
+                    hMenu.style.display = 'block';
+                    hMenu.style.left = e.pageX + 'px';
+                    hMenu.style.top = (e.pageY - 40) + 'px';
+                    return;
+                }
+            }
+            if(hMenu) hMenu.style.display = 'none';
+        });
+        window.applyHighlight = function(c, e) {
+            e.preventDefault(); e.stopPropagation();
+            if(!savedRange) return;
+            const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange);
+            document.designMode = 'on';
+            if(c==='remove') { document.execCommand('removeFormat',false,null); document.execCommand('backColor',false,'transparent'); }
+            else { document.execCommand('backColor',false,c); }
+            document.designMode = 'off'; sel.removeAllRanges(); hMenu.style.display='none';
+        }
+    }
+
+    function submitTest() {
+        let score = 0;
+        const body = document.getElementById('resultsBody'); 
+        if(body) body.innerHTML='';
+        
+        for(let i=14; i<=26; i++) {
+            let uAns = "";
+            let correctStr = answers[i] || "N/A";
+            let correctArr = correctStr.split('|').map(x => x.toUpperCase());
+            let isCorrect = false;
+
+            if (i >= 14 && i <= 19) {
+                const dz = document.getElementById(`dz-q${i}`);
+                
+                if (dz && dz.children.length > 0 && dz.children[0].classList.contains('draggable-heading')) {
+                    uAns = dz.children[0].getAttribute('data-val');
+                } else {
+                    uAns = "-";
+                }
+                
+                if (correctArr.includes(uAns)) {
+                    isCorrect = true;
+                    score++;
+                }
+
+                if(dz && uAns !== "-") {
+                    dz.classList.remove('cell-correct', 'cell-incorrect');
+                    dz.classList.add(isCorrect ? 'cell-correct' : 'cell-incorrect');
+                }
+
+            } else {
+                let el = document.getElementById(`q${i}`);
+                if(el && el.tagName === 'INPUT') uAns = el.value;
+                else if(document.querySelector(`input[name="q${i}"]:checked`)) {
+                    uAns = document.querySelector(`input[name="q${i}"]:checked`).value;
+                }
+
+                uAns = (uAns || "-").trim().toUpperCase();
+                
+                if(correctArr.includes(uAns)) {
+                   isCorrect = true;
+                   score++;
+                }
+                
+                if(el && el.tagName === 'INPUT') {
+                    el.classList.remove('correct', 'incorrect');
+                    el.classList.add(isCorrect ? 'correct' : 'incorrect');
+                } else if (document.querySelector(`input[name="q${i}"]`)) {
+                    document.querySelectorAll(`input[name="q${i}"]`).forEach(radio => {
+                        radio.parentElement.classList.remove('cell-correct', 'cell-incorrect');
+                    });
+                    let checkedRadio = document.querySelector(`input[name="q${i}"]:checked`);
+                    if(checkedRadio) {
+                        checkedRadio.parentElement.classList.add(isCorrect ? 'cell-correct' : 'cell-incorrect');
+                    }
+                }
+            }
+
+            let displayCorrect = correctArr[0];
+
+            if(body) {
+               body.innerHTML += `
+               <tr onclick="jumpToQ(${i})" style="cursor:pointer;" title="Click to review this question">
+                <td>${i}</td>
+                <td style="color:${isCorrect===true ? 'green' : 'red'}; font-weight:bold;">${uAns}</td>
+                <td style="font-weight:bold;">${displayCorrect}</td>
+                <td>${(isCorrect===true)?'Correct':'Incorrect'}</td>
+               </tr>`;
+            }
+        }
+        const scoreEl = document.getElementById('finalScore');
+        if(scoreEl) scoreEl.innerText = `Score: ${score} / 13`;
+        const modal = document.getElementById('resultsModal');
+        if(modal) modal.style.display='flex';
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

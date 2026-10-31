@@ -1,0 +1,824 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Reading Simulator - Coral Reefs</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+<style>
+    /* --- VARIABLES --- */
+    :root {
+        --base-size: 14px;
+        --header-bg: #ffffff;
+        --header-text: #333333;
+        --bg-app: #f4f4f4;
+        --bg-paper: #ffffff;
+        --text-main: #000000;
+        --border-color: #dcdcdc;
+        --footer-bg: #e0e0e0;
+        --active-q-bg: #333;
+        --active-q-text: #fff;
+        --instruction-bg: #fdfdfd;
+        --instruction-border: #888;
+    }
+
+    /* THEMES */
+    body.theme-dark {
+        --header-bg: #1a1a1a; --header-text: #fff; --bg-app: #333; --bg-paper: #000;
+        --text-main: #ccc; --border-color: #555; --footer-bg: #222;
+        --active-q-bg: #ccc; --active-q-text: #000; --instruction-bg: #222; --instruction-border: #777;
+    }
+    body.theme-yellow {
+        --header-bg: #000; --header-text: #ff0; --bg-app: #111; --bg-paper: #000;
+        --text-main: #ff0; --border-color: #ff0; --footer-bg: #111;
+        --active-q-bg: #ff0; --active-q-text: #000; --instruction-bg: #111; --instruction-border: #ff0;
+    }
+
+    /* SIZES */
+    body.text-reg { --base-size: 14px; }
+    body.text-med { --base-size: 16px; }
+    body.text-lg { --base-size: 18px; }
+    body.text-xl { --base-size: 22px; }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0; padding: 0;
+        font-family: 'Verdana', sans-serif;
+        height: 100vh;
+        display: flex; flex-direction: column;
+        background-color: var(--bg-app);
+        color: var(--text-main);
+        overflow: hidden;
+        font-size: var(--base-size);
+    }
+
+    /* --- HEADER --- */
+    .top-bar {
+        background-color: var(--header-bg);
+        color: var(--header-text);
+        height: 60px;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 20px; flex-shrink: 0;
+        border-bottom: 1px solid var(--border-color);
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .top-left { font-weight: bold; font-size: 1.1em; }
+    
+    .timer-group {
+        position: absolute; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 15px;
+    }
+    .timer { font-size: 1.4em; font-weight: bold; color: #d32f2f; font-family: monospace; }
+    
+    .telegram-link {
+        text-decoration: none; color: #0088cc; font-size: 0.9em;
+        display: flex; align-items: center; gap: 5px;
+        background: rgba(0, 136, 204, 0.1); padding: 4px 10px; border-radius: 15px;
+        transition: background 0.2s;
+    }
+    .telegram-link:hover { background: rgba(0, 136, 204, 0.2); }
+
+    /* Settings Menu */
+    .settings-menu {
+        position: absolute; top: 60px; right: 10px;
+        background: var(--header-bg); border: 1px solid var(--border-color);
+        padding: 15px; border-radius: 4px; display: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1000; width: 220px;
+        color: var(--header-text);
+    }
+    .s-btn { 
+        display: block; width: 100%; padding: 8px 10px; cursor: pointer; font-size: 13px; 
+        border: 1px solid var(--border-color); background: var(--bg-paper); 
+        color: var(--text-main); margin-bottom: 6px; text-align: left; border-radius: 3px;
+    }
+    .s-btn:hover { background: var(--border-color); }
+
+    /* --- INSTRUCTION BANNER --- */
+    .instruction-banner {
+        background-color: #f0f0f0; padding: 8px 20px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.95em; color: #333; flex-shrink: 0;
+    }
+    body.theme-dark .instruction-banner { background-color: #333; color: #fff; }
+    body.theme-yellow .instruction-banner { background-color: #222; color: #ff0; border-color: #ff0; }
+
+    /* --- MAIN LAYOUT --- */
+    .main-container { display: flex; flex: 1; overflow: hidden; background-color: var(--bg-paper); position: relative; }
+    .passage-pane, .question-pane { padding: 30px; overflow-y: auto; line-height: 1.7; outline: none; height: 100%; }
+    .passage-pane { width: 50%; border-right: 2px solid var(--border-color); font-family: 'Times New Roman', Times, serif; font-size: 1.1em; }
+    .question-pane { flex: 1; font-family: 'Verdana', sans-serif; }
+    .passage-content, .question-content { display: none; }
+    .passage-content.active, .question-content.active { display: block; }
+    
+    .passage-pane p { margin-bottom: 15px; text-align: justify; }
+    .paragraph-label { font-weight: bold; margin-right: 10px; font-size: 1.1em; float: left; }
+    
+    .divider { width: 8px; background: #f0f0f0; cursor: col-resize; border-left: 1px solid #ddd; border-right: 1px solid #ddd; z-index: 10; }
+    body.theme-dark .divider { background: #444; border-color: #555; }
+    body.theme-yellow .divider { background: #222; border-color: #ff0; }
+
+    /* --- INSTRUCTION BOXES & LISTS --- */
+    .instruction-box { border: 1px solid var(--instruction-border); background-color: var(--instruction-bg); padding: 15px; margin-bottom: 25px; font-size: 0.9em; }
+    .instruction-box h3 { margin: 0 0 5px 0; font-size: 1em; text-transform: uppercase; }
+    .instruction-box p { margin: 5px 0 0 0; }
+    
+    .q-item-block { margin-bottom: 20px; transition: background-color 0.3s; }
+    .q-num-plain { display: inline-block; min-width: 25px; font-weight: bold; margin-right: 5px; color: var(--text-main); flex-shrink: 0;}
+    
+    .tf-question { margin-bottom: 25px; }
+    .tf-options { 
+        margin-left: 35px; 
+        margin-top: 10px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 8px; 
+    }
+    .tf-options label { 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        transition: background-color 0.2s; 
+        cursor: pointer; 
+        width: fit-content; 
+    }
+    .tf-options input[type="radio"], .tf-options input[type="checkbox"] { 
+        transform: scale(1.2); 
+        margin-right: 8px; 
+        cursor: pointer; 
+    }
+
+    /* --- MATRIX TABLE STYLES --- */
+    .matrix-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; background: var(--header-bg); }
+    .matrix-table th { padding: 10px; border: 1px solid var(--border-color); text-align: center; background: #e9e9e9; color: #333; font-weight: bold; }
+    .matrix-table td { padding: 10px; border: 1px solid var(--border-color); text-align: center; vertical-align: middle; transition: background-color 0.3s; }
+    .matrix-table td.m-text { text-align: left; }
+    .matrix-table td.m-qnum { font-weight: bold; width: 30px; }
+    .matrix-table input[type="radio"] { transform: scale(1.3); cursor: pointer; margin: 0; }
+    
+    body.theme-dark .matrix-table th { background: #444; color: #fff; border-color: #555; }
+    body.theme-yellow .matrix-table th { background: #333; color: #ff0; border-color: #ff0; }
+
+    .cell-correct { background-color: rgba(0, 200, 0, 0.2) !important; }
+    .cell-incorrect { background-color: rgba(255, 0, 0, 0.2) !important; }
+    
+    /* --- FOOTER --- */
+    .footer-bar { height: 60px; background-color: var(--footer-bg); border-top: 1px solid var(--border-color); display: flex; align-items: stretch; padding: 0; flex-shrink: 0; }
+    .footer-parts-container { display: flex; flex: 1; width: 100%; }
+    .footer-part-item { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 20px; cursor: pointer; border-right: 1px solid #ccc; transition: background 0.2s; }
+    body.theme-dark .footer-part-item { border-right-color: #555; }
+    body.theme-yellow .footer-part-item { border-right-color: #ff0; }
+    .footer-part-item:hover { background-color: rgba(0,0,0,0.05); }
+    body.theme-dark .footer-part-item:hover { background-color: rgba(255,255,255,0.1); }
+    body.theme-yellow .footer-part-item:hover { background-color: #222; }
+    
+    .part-content-wrapper { display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%; }
+    .p-label { font-weight: bold; font-size: 15px; color: var(--text-main); white-space: nowrap; }
+    .p-count { font-weight: bold; font-size: 13px; color: #0088cc; white-space: nowrap; } 
+    body.theme-dark .p-count { color: #44ccff; }
+    body.theme-yellow .p-count { color: #ff0; }
+
+    .q-numbers-list { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; margin-top: 4px; padding-bottom: 2px; }
+    .q-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 1px solid #999; cursor: pointer; color: #333; background: #fff; border-radius: 2px; font-size: 12px; flex-shrink: 0; }
+    .q-btn:hover { background: #ccc; }
+    .q-btn.answered { background-color: var(--active-q-bg); color: var(--active-q-text); border-color: var(--text-main); font-weight: bold; }
+
+    .submit-container { width: 60px; background: #ccc; display: flex; align-items: center; justify-content: center; cursor: pointer; border-left: 1px solid #999; }
+    .submit-container:hover { background: #bbb; }
+    .submit-icon { font-size: 20px; color: #333; }
+    body.theme-dark .submit-container { background: #444; border-left-color: #555; }
+    body.theme-dark .submit-icon { color: #fff; }
+    body.theme-yellow .submit-container { background: #333; border-left-color: #ff0; }
+    body.theme-yellow .submit-icon { color: #ff0; }
+
+    /* --- HIGHLIGHTER --- */
+    #highlightMenu { position: absolute; display: none; background: #fff; padding: 5px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 9999; }
+    .hl-color { width: 24px; height: 24px; display: inline-block; margin: 0 4px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; }
+
+    /* --- MODAL --- */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items: center; justify-content: center; }
+    .modal-content { background: #fff; width: 85%; max-width: 900px; height: 85%; border-radius: 4px; display: flex; flex-direction: column; color: #000; padding: 20px; }
+    .modal-header { display: flex; justify-content: space-between; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+    .modal-body { flex: 1; overflow-y: auto; }
+    .result-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .result-table th, .result-table td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    .result-table tbody tr:hover { background-color: rgba(0,0,0,0.05); }
+    body.theme-dark .result-table tbody tr:hover { background-color: rgba(255,255,255,0.1); }
+    body.theme-yellow .result-table tbody tr:hover { background-color: rgba(255,255,0,0.2); }
+    .status-correct { color: green; font-weight: bold; }
+    .status-incorrect { color: red; font-weight: bold; }
+</style>
+</head>
+<body class="theme-standard text-reg">
+
+    <div class="top-bar">
+        <div class="top-left">IELTS Reading test simulator</div>
+        <div class="timer-group">
+            <div class="timer" id="timer">00:00</div>
+            <a href="https://t.me/khamidovs_ielts" target="_blank" class="telegram-link"><i class="fab fa-telegram-plane"></i> @khamidovs_ielts</a>
+        </div>
+        <div style="font-size:18px; cursor:pointer; padding:5px;" onclick="toggleSettings()"><i class="fas fa-bars"></i></div>
+        <div class="settings-menu" id="settingsMenu">
+            <h4 style="margin:0 0 10px 0; border-bottom: 1px solid var(--border-color); padding-bottom:5px;">Settings</h4>
+            <div style="margin-bottom:15px;">
+                <div style="font-weight:bold; margin-bottom:5px;">Text Size</div>
+                <div style="display:flex; flex-direction:column;">
+                    <button class="s-btn" onclick="setSize('text-reg')">Standard</button>
+                    <button class="s-btn" onclick="setSize('text-med')">Medium</button>
+                    <button class="s-btn" onclick="setSize('text-lg')">Large</button>
+                    <button class="s-btn" onclick="setSize('text-xl')">Extra Large</button>
+                </div>
+            </div>
+            <div>
+                <div style="font-weight:bold; margin-bottom:5px;">Color Mode</div>
+                <div style="display:flex; flex-direction:column;">
+                    <button class="s-btn" onclick="setTheme('theme-standard')">Standard</button>
+                    <button class="s-btn" onclick="setTheme('theme-dark')">White on Black</button>
+                    <button class="s-btn" onclick="setTheme('theme-yellow')">Yellow on Black</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="instruction-banner" id="topInstruction">You should spend about 20 minutes on Questions 14-26, which are based on Reading Passage 2.</div>
+
+    <div class="main-container">
+        <!-- PASSAGE PANE -->
+        <div class="passage-pane" id="passagePane">
+            <div id="p-content-14" class="passage-content active">
+                <p><span class="paragraph-label">A</span> Coral reefs are found in shallow waters throughout the tropical world, and dominate the coastlines of many countries in the South Pacific, Southeast Asia and the Indian Ocean. It has been estimated that over half a billion people live within 100km of coral reef, with over 20 million living near reefs in South-east Asia and nearly 100 million living near reefs in the Indian Ocean (Bryant et al, 1998). While these figures are often quoted in the literature, it is not known exactly how many people depend on reefs, or what their level of dependence is. We do know, however, that there is a wide diversity of stakeholders.</p>
+
+                <p><span class="paragraph-label">B</span> National and international interest in coral reefs is growing. For example, as a focus for research studies by marine biologists, reefs are also increasingly seen as part of a national heritage, as a dumping ground for waste, or as a source of pleasure for tourists. Many of the people who live in adjacent coastal areas are, however, economically dependent on the reefs. Some of these local inhabitants are able to develop strategies that make full-time, regular use of the reef and its resources. Others can use the reef as a crucial safety net in difficult times. Still, others use the reef as a resource that they tap into at certain times of the year, when they cannot earn a living from other resources. For these groups, coral reefs provide a complex range of benefits.</p>
+
+                <p><span class="paragraph-label">C</span> The reefs are formed from the skeletons of minute sea creatures, and provide cover for a wide variety of plants and animals. Raw materials include seasonally stable supplies of food, building materials and medicines. As well as an immediate resource, these can also act as a medium of exchange, or a source of income and status. In addition, reefs often give rise to islands that provide habitats for people, and lenses of fresh water for drinking, reduce wave action and protect lagoons and other productive areas, such as sea grasses and mangroves, which, in turn, provide a reserve of food in all climatic conditions. Furthermore, the physical structure of the reef dictates that many activities are done communally, and this means that work on the reefs can be socially unifying.</p>
+
+                <p><span class="paragraph-label">D</span> Reefs offer multiple opportunities for direct exploitation by people with many different skills, as well as access to a wide range of different markets, including high-value export outlets. The structural and species diversity of the reef prohibits large-scale, industrial production, and favours small-scale production, thus preserving opportunities for those with few financial or physical resources. Furthermore, the fact that many reef resources are collectively owned means that people who are displaced from other sectors are able to share in them, especially in times of emergency, although the high degree of skill required to fully understand the reef limits the uptake of certain activities which require more complex harvesting strategies.</p>
+
+                <p><span class="paragraph-label">E</span> For poor coastal households, particularly female headed households and vulnerable groups such as the elderly, shallow coral-reef resources are often their principal source of subsistence and income. Unlike many other types of fishery, where they are excluded from working, coral reefs offer opportunities for women and the elderly, because reef products can be collected on foot. This has significant benefits in empowering women in the household, and different reef-based occupations between men and women spread household risk. However, the ability of coral reefs to continue to provide benefits to the poor is now changing. Throughout the world the capacity of coral reefs to buffer risks and provide livelihood stability is eroding as a result of the diminishing availability of resources. This change is driven by a complex web of direct and indirect factors, over which the coastal poor have only a limited degree of control.</p>
+
+                <p><span class="paragraph-label">F</span> One of the principal factors responsible for declining reef benefits is reef degradation: coral reef ecosystems are extremely sensitive to change, and easily suffer from disturbance. As coastal areas become ever more populated, increasing numbers of reef stakeholders compete for access to reef benefits. This situation has led to increasing pressure on reef resources, typically resulting in over harvesting and reef decline. In addition, lucrative markets for reef species often drive unsustainable and destructive extraction regimes. The reefs are also degraded by coastal and inland developments and the pollution they produce, as well as by the natural impacts of storms and predator outbreaks. However, perhaps the most significant large-scale cause of reef decline in the longer term is climate change, which threatens to damage large areas of reef worldwide.</p>
+
+                <p><span class="paragraph-label">G</span> For the poor, these changes have resulted in an increasing reliance on reefs; as larger coastal populations, widespread development, and increasing global-market forces overwhelm and degrade alternative resources such as farmland. However, in many cases, coastal tourism developments, external markets and well-meaning efforts to halt reef decline have excluded them from access to reef benefits too. In these cases, livelihoods have often become criminalised by legislation, increasing the burden of risk and transaction costs on the poor, who typically have few other alternatives.</p>
+            </div>
+        </div>
+
+        <div class="divider" id="divider"></div>
+
+        <div class="question-pane" id="questionPane">
+            <div id="q-content-14" class="question-content active">
+                
+                <div class="instruction-box">
+                    <h3>Questions 14 - 19</h3>
+                    <p>Reading Passage 2 has seven paragraphs <strong>A-G</strong>.</p>
+                    <p>Which paragraph contains the following information?</p>
+                    <p>Write the correct letter, <strong>A-G</strong>, in boxes 14-19 on your answer sheet.</p>
+                    <p><em><strong>NB</strong> You may use any letter more than once.</em></p>
+                </div>
+                
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="m-qnum">14</td>
+                            <td class="m-text">how coral reefs offer shelter from the weather</td>
+                            <td><input type="radio" name="q14" value="A" onchange="updateAnswerStatus(14)"></td>
+                            <td><input type="radio" name="q14" value="B" onchange="updateAnswerStatus(14)"></td>
+                            <td><input type="radio" name="q14" value="C" onchange="updateAnswerStatus(14)"></td>
+                            <td><input type="radio" name="q14" value="D" onchange="updateAnswerStatus(14)"></td>
+                            <td><input type="radio" name="q14" value="E" onchange="updateAnswerStatus(14)"></td>
+                            <td><input type="radio" name="q14" value="F" onchange="updateAnswerStatus(14)"></td>
+                            <td><input type="radio" name="q14" value="G" onchange="updateAnswerStatus(14)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">15</td>
+                            <td class="m-text">population statistics</td>
+                            <td><input type="radio" name="q15" value="A" onchange="updateAnswerStatus(15)"></td>
+                            <td><input type="radio" name="q15" value="B" onchange="updateAnswerStatus(15)"></td>
+                            <td><input type="radio" name="q15" value="C" onchange="updateAnswerStatus(15)"></td>
+                            <td><input type="radio" name="q15" value="D" onchange="updateAnswerStatus(15)"></td>
+                            <td><input type="radio" name="q15" value="E" onchange="updateAnswerStatus(15)"></td>
+                            <td><input type="radio" name="q15" value="F" onchange="updateAnswerStatus(15)"></td>
+                            <td><input type="radio" name="q15" value="G" onchange="updateAnswerStatus(15)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">16</td>
+                            <td class="m-text">various causes of reef deterioration</td>
+                            <td><input type="radio" name="q16" value="A" onchange="updateAnswerStatus(16)"></td>
+                            <td><input type="radio" name="q16" value="B" onchange="updateAnswerStatus(16)"></td>
+                            <td><input type="radio" name="q16" value="C" onchange="updateAnswerStatus(16)"></td>
+                            <td><input type="radio" name="q16" value="D" onchange="updateAnswerStatus(16)"></td>
+                            <td><input type="radio" name="q16" value="E" onchange="updateAnswerStatus(16)"></td>
+                            <td><input type="radio" name="q16" value="F" onchange="updateAnswerStatus(16)"></td>
+                            <td><input type="radio" name="q16" value="G" onchange="updateAnswerStatus(16)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">17</td>
+                            <td class="m-text">the location of coral reefs</td>
+                            <td><input type="radio" name="q17" value="A" onchange="updateAnswerStatus(17)"></td>
+                            <td><input type="radio" name="q17" value="B" onchange="updateAnswerStatus(17)"></td>
+                            <td><input type="radio" name="q17" value="C" onchange="updateAnswerStatus(17)"></td>
+                            <td><input type="radio" name="q17" value="D" onchange="updateAnswerStatus(17)"></td>
+                            <td><input type="radio" name="q17" value="E" onchange="updateAnswerStatus(17)"></td>
+                            <td><input type="radio" name="q17" value="F" onchange="updateAnswerStatus(17)"></td>
+                            <td><input type="radio" name="q17" value="G" onchange="updateAnswerStatus(17)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">18</td>
+                            <td class="m-text">examples of coral-reef products</td>
+                            <td><input type="radio" name="q18" value="A" onchange="updateAnswerStatus(18)"></td>
+                            <td><input type="radio" name="q18" value="B" onchange="updateAnswerStatus(18)"></td>
+                            <td><input type="radio" name="q18" value="C" onchange="updateAnswerStatus(18)"></td>
+                            <td><input type="radio" name="q18" value="D" onchange="updateAnswerStatus(18)"></td>
+                            <td><input type="radio" name="q18" value="E" onchange="updateAnswerStatus(18)"></td>
+                            <td><input type="radio" name="q18" value="F" onchange="updateAnswerStatus(18)"></td>
+                            <td><input type="radio" name="q18" value="G" onchange="updateAnswerStatus(18)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">19</td>
+                            <td class="m-text">the ease of physical access to reefs</td>
+                            <td><input type="radio" name="q19" value="A" onchange="updateAnswerStatus(19)"></td>
+                            <td><input type="radio" name="q19" value="B" onchange="updateAnswerStatus(19)"></td>
+                            <td><input type="radio" name="q19" value="C" onchange="updateAnswerStatus(19)"></td>
+                            <td><input type="radio" name="q19" value="D" onchange="updateAnswerStatus(19)"></td>
+                            <td><input type="radio" name="q19" value="E" onchange="updateAnswerStatus(19)"></td>
+                            <td><input type="radio" name="q19" value="F" onchange="updateAnswerStatus(19)"></td>
+                            <td><input type="radio" name="q19" value="G" onchange="updateAnswerStatus(19)"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="instruction-box" style="margin-top: 35px;">
+                    <h3>Questions 20 - 25</h3>
+                    <p>Do the following statements agree with the information given in Reading Passage 2?</p>
+                    <p>In boxes 20-25 on your answer sheet, write</p>
+                    <p>
+                        <strong>TRUE</strong> if the statement agrees with the information<br>
+                        <strong>FALSE</strong> if the statement contradicts the information<br>
+                        <strong>NOT GIVEN</strong> if there is no information on this
+                    </p>
+                </div>
+                
+                <div class="q-item-block" style="margin-bottom: 30px;">
+                    <!-- Question 20 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">20</span>
+                            <span>Coral reefs are increasingly used for scientific purposes.</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q20" value="TRUE" onchange="updateAnswerStatus(20)"> TRUE</label>
+                            <label><input type="radio" name="q20" value="FALSE" onchange="updateAnswerStatus(20)"> FALSE</label>
+                            <label><input type="radio" name="q20" value="NOT GIVEN" onchange="updateAnswerStatus(20)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+
+                    <!-- Question 21 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">21</span>
+                            <span>Some people only farm coral reefs to supplement other sources of income.</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q21" value="TRUE" onchange="updateAnswerStatus(21)"> TRUE</label>
+                            <label><input type="radio" name="q21" value="FALSE" onchange="updateAnswerStatus(21)"> FALSE</label>
+                            <label><input type="radio" name="q21" value="NOT GIVEN" onchange="updateAnswerStatus(21)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+
+                    <!-- Question 22 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">22</span>
+                            <span>Foreign tourists are the main purchasers of coral-reef exports.</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q22" value="TRUE" onchange="updateAnswerStatus(22)"> TRUE</label>
+                            <label><input type="radio" name="q22" value="FALSE" onchange="updateAnswerStatus(22)"> FALSE</label>
+                            <label><input type="radio" name="q22" value="NOT GIVEN" onchange="updateAnswerStatus(22)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+
+                    <!-- Question 23 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">23</span>
+                            <span>Coral reefs can support mass-production methods.</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q23" value="TRUE" onchange="updateAnswerStatus(23)"> TRUE</label>
+                            <label><input type="radio" name="q23" value="FALSE" onchange="updateAnswerStatus(23)"> FALSE</label>
+                            <label><input type="radio" name="q23" value="NOT GIVEN" onchange="updateAnswerStatus(23)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+
+                    <!-- Question 24 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">24</span>
+                            <span>As with many fisheries, work on coral reefs is unsuitable for some sections of the population</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q24" value="TRUE" onchange="updateAnswerStatus(24)"> TRUE</label>
+                            <label><input type="radio" name="q24" value="FALSE" onchange="updateAnswerStatus(24)"> FALSE</label>
+                            <label><input type="radio" name="q24" value="NOT GIVEN" onchange="updateAnswerStatus(24)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+
+                    <!-- Question 25 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">25</span>
+                            <span>Coastal tourism developments have generally benefited the poor.</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q25" value="TRUE" onchange="updateAnswerStatus(25)"> TRUE</label>
+                            <label><input type="radio" name="q25" value="FALSE" onchange="updateAnswerStatus(25)"> FALSE</label>
+                            <label><input type="radio" name="q25" value="NOT GIVEN" onchange="updateAnswerStatus(25)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="instruction-box" style="margin-top: 35px;">
+                    <h3>Question 26</h3>
+                    <p>Choose the correct letter, <strong>A, B, C or D</strong>.</p>
+                    <p>Write the correct letter in box 26 on your answer sheet.</p>
+                </div>
+
+                <div class="q-item-block" style="margin-bottom: 30px;">
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">26</span>
+                            <span>Which is the best title for Reading Passage 2?</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q26" value="A" onchange="updateAnswerStatus(26)"> A What inhabits a coral reef</label>
+                            <label><input type="radio" name="q26" value="B" onchange="updateAnswerStatus(26)"> B How to repair a coral reef</label>
+                            <label><input type="radio" name="q26" value="C" onchange="updateAnswerStatus(26)"> C The economic importance of coral reefs</label>
+                            <label><input type="radio" name="q26" value="D" onchange="updateAnswerStatus(26)"> D The ecological sustainability of coral reefs</label>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bar" id="footerBar">
+        <!-- Footer Nav injected via JS -->
+    </div>
+
+    <!-- Highlight Menu -->
+    <div id="highlightMenu">
+        <span class="hl-color" style="background:#ffff00" onmousedown="applyHighlight('yellow', event)"></span>
+        <span class="hl-color" style="background:#44ff44" onmousedown="applyHighlight('#44ff44', event)"></span>
+        <span class="hl-color" style="background:#44ccff" onmousedown="applyHighlight('#44ccff', event)"></span>
+        <span class="hl-color" style="background:#fff; color:#333; text-align:center; line-height:22px; font-weight:bold; font-size:12px; border: 1px solid #ccc;" onmousedown="applyHighlight('remove', event)">X</span>
+    </div>
+
+    <!-- Results Modal -->
+    <div class="modal-overlay" id="resultsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="margin: 0;">Test Results</h2>
+                <button onclick="document.getElementById('resultsModal').style.display='none'" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h1 style="text-align:center; margin-top: 0;" id="finalScore"></h1>
+                <table class="result-table">
+                    <thead><tr><th>Q</th><th>Your Answer</th><th>Correct Answer</th><th>Status</th></tr></thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+            <div style="padding: 20px; text-align:center; border-top: 1px solid #ddd;">
+                <button onclick="document.getElementById('resultsModal').style.display='none'" style="padding:10px 20px; cursor:pointer; font-size: 16px; background: #000; color: #fff; border: none; border-radius: 4px;">Review Mistakes</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- TIMER LOGIC (Stopwatch - Counts Up) ---
+    let time = 0; 
+    const timerInterval = setInterval(() => {
+        time++;
+        const m = Math.floor(time / 60).toString().padStart(2, '0');
+        const s = (time % 60).toString().padStart(2, '0');
+        const el = document.getElementById('timer');
+        if(el) el.innerText = `${m}:${s}`;
+    }, 1000);
+
+    const partsConfig = {
+        14: { start: 14, end: 26, instr: "You should spend about 20 minutes on Questions 14-26, which are based on Reading Passage 2." }
+    };
+    let currentPart = 14;
+
+    // ANSWER KEY
+    const answers = { 
+        14:'C', 
+        15:'A', 
+        16:'F', 
+        17:'A', 
+        18:'C', 
+        19:'E', 
+        20:'TRUE', 
+        21:'TRUE', 
+        22:'NOT GIVEN', 
+        23:'FALSE', 
+        24:'FALSE', 
+        25:'FALSE', 
+        26:'C'
+    };
+
+    function init() {
+        renderFooter();
+        
+        const divider = document.getElementById('divider');
+        const pPane = document.getElementById('passagePane');
+        let isDrag = false;
+        if(divider && pPane) {
+            divider.addEventListener('mousedown', (e) => { isDrag = true; e.preventDefault(); });
+            document.addEventListener('mouseup', () => isDrag = false);
+            document.addEventListener('mousemove', (e) => {
+                if(isDrag) {
+                    let pct = (e.clientX / window.innerWidth) * 100;
+                    if(pct > 20 && pct < 80) pPane.style.width = pct + '%';
+                }
+            });
+        }
+        
+        setupHighlighter();
+    }
+
+    function setPart(p) {
+        currentPart = p;
+        document.querySelectorAll('.passage-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.question-content').forEach(el => el.classList.remove('active'));
+        const pContent = document.getElementById(`p-content-${p}`);
+        const qContent = document.getElementById(`q-content-${p}`);
+        if(pContent) pContent.classList.add('active');
+        if(qContent) qContent.classList.add('active');
+        
+        const pPane = document.getElementById('passagePane');
+        const qPane = document.getElementById('questionPane');
+        if(pPane) pPane.scrollTop = 0;
+        if(qPane) qPane.scrollTop = 0;
+        
+        document.getElementById('topInstruction').innerText = partsConfig[p].instr;
+        renderFooter();
+    }
+
+    // --- IMMEDIATE UPDATE LOGIC ---
+    function updateAnswerStatus(q) {
+        const btn = document.getElementById(`btn-q${q}`);
+        if(isAnswered(q)) {
+            if(btn) btn.classList.add('answered');
+        } else {
+            if(btn) btn.classList.remove('answered');
+        }
+        updateProgressCount();
+    }
+
+    function updateProgressCount() {
+        for(let p=14; p<=14; p+=13) { 
+            const range = partsConfig[14];
+            const total = range.end - range.start + 1;
+            const answeredCount = countAnswered(range.start, range.end);
+            const countEl = document.getElementById(`p-count-14`);
+            if (countEl) countEl.innerText = `${answeredCount} of ${total}`;
+        }
+    }
+
+    function renderFooter() {
+        const footer = document.getElementById('footerBar');
+        if(!footer) return;
+        footer.innerHTML = ''; 
+
+        const partsContainer = document.createElement('div');
+        partsContainer.className = 'footer-parts-container';
+
+        const range = partsConfig[14];
+        const total = range.end - range.start + 1;
+        const answeredCount = countAnswered(range.start, range.end);
+
+        const partItem = document.createElement('div');
+        partItem.className = 'footer-part-item';
+        partItem.onclick = () => setPart(14);
+
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'part-content-wrapper';
+
+        const label = document.createElement('span');
+        label.className = 'p-label';
+        label.innerText = `Questions ${range.start}-${range.end}`;
+        contentWrapper.appendChild(label);
+
+        const list = document.createElement('div');
+        list.className = 'q-numbers-list';
+        for(let q = range.start; q <= range.end; q++) {
+            const btn = document.createElement('div');
+            btn.className = 'q-btn';
+            btn.innerText = q;
+
+            btn.id = `btn-q${q}`;
+            if(isAnswered(q)) btn.classList.add('answered');
+            btn.onclick = (e) => { e.stopPropagation(); scrollToQ(q); };
+            list.appendChild(btn);
+        }
+        contentWrapper.appendChild(list);
+        
+        const count = document.createElement('span');
+        count.className = 'p-count';
+        count.id = `p-count-14`;
+        count.innerText = `${answeredCount} of ${total}`;
+        contentWrapper.appendChild(count);
+
+        partItem.appendChild(contentWrapper);
+        partsContainer.appendChild(partItem);
+        
+        footer.appendChild(partsContainer);
+
+        const subContainer = document.createElement('div');
+        subContainer.className = 'submit-container';
+        subContainer.onclick = submitTest;
+        subContainer.innerHTML = '<i class="fas fa-check submit-icon"></i>';
+        footer.appendChild(subContainer);
+    }
+
+    function scrollToQ(q) {
+        let targetId = `q${q}`;
+
+        const el = document.getElementById(targetId);
+        if(el) {
+            el.scrollIntoView({behavior:'smooth', block:'center'});
+        } else {
+             let inp = document.getElementById(`q${q}_in`) || document.querySelector(`input[name="q${q}"]`);
+             if(!inp) { 
+                 const slot = document.querySelector(`.drop-slot[data-q="${q}"]`);
+                 if(slot) {
+                    slot.scrollIntoView({behavior:'smooth', block:'center'});
+                    return;
+                 }
+                 const sel = document.getElementById(`q${q}`);
+                 if (sel) {
+                    sel.scrollIntoView({behavior:'smooth', block:'center'});
+                    return;
+                 }
+                 return;
+             }
+             if(inp) inp.closest('tr, .q-item, .instruction-box, td, .q-item-block, .tf-question, .tf-options').scrollIntoView({behavior:'smooth', block:'center'});
+        }
+    }
+
+    function jumpToQ(q) {
+        document.getElementById('resultsModal').style.display = 'none';
+        
+        setTimeout(() => {
+            scrollToQ(q);
+            let el = null;
+            let targetId = `q${q}`;
+            el = document.getElementById(targetId) || document.getElementById(`q${q}_in`) || document.querySelector(`input[name="q${q}"]`);
+            if(!el) {
+                const slot = document.querySelector(`.drop-slot[data-q="${q}"]`);
+                if(slot) el = slot;
+                
+                const sel = document.getElementById(`q${q}`);
+                if (sel && !el) el = sel;
+            }
+            
+            if(el) {
+                let container = el.closest('tr, .q-item-block, .q-item, .instruction-box, td, p, li, .summary-text, div.tf-question, .tf-options');
+                if(container) {
+                    let origBg = container.style.backgroundColor;
+                    container.style.backgroundColor = 'rgba(0, 136, 204, 0.2)';
+                    setTimeout(() => { container.style.backgroundColor = origBg; }, 1500);
+                } 
+            }
+        }, 100);
+    }
+
+    function isAnswered(q) {
+        const gap = document.getElementById(`q${q}`);
+        if(gap && gap.tagName === 'INPUT' && gap.value.trim() !== "") return true;
+
+        const radios = document.querySelectorAll(`input[name="q${q}"]:checked`);
+        if(radios.length > 0) return true;
+
+        return false;
+    }
+
+    function countAnswered(start, end) {
+        let c = 0;
+        for(let i=start; i<=end; i++) {
+           if(isAnswered(i)) c++;
+        }
+        return c;
+    }
+
+    function toggleSettings() {
+        const m = document.getElementById('settingsMenu');
+        if(m) m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+    }
+    function setSize(c) {
+        document.body.classList.remove('text-reg','text-med','text-lg','text-xl');
+        document.body.classList.add(c);
+        toggleSettings();
+    }
+    function setTheme(c) {
+        document.body.classList.remove('theme-standard','theme-dark','theme-yellow');
+        document.body.classList.add(c);
+        toggleSettings();
+    }
+
+    function setupHighlighter() {
+        const hMenu = document.getElementById('highlightMenu');
+        let savedRange = null;
+        document.addEventListener('mouseup', (e) => {
+            if(e.target.closest('#highlightMenu') || e.target.closest('.settings-menu')) return;
+            const sel = window.getSelection();
+            if(sel.rangeCount > 0 && sel.toString().length > 0) {
+                const node = sel.anchorNode;
+                if(node && node.parentElement && (node.parentElement.closest('.passage-pane') || node.parentElement.closest('.question-pane'))) {
+                    savedRange = sel.getRangeAt(0).cloneRange();
+                    hMenu.style.display = 'block';
+                    hMenu.style.left = e.pageX + 'px';
+                    hMenu.style.top = (e.pageY - 40) + 'px';
+                    return;
+                }
+            }
+            if(hMenu) hMenu.style.display = 'none';
+        });
+        window.applyHighlight = function(c, e) {
+            e.preventDefault(); e.stopPropagation();
+            if(!savedRange) return;
+            const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange);
+            document.designMode = 'on';
+            if(c==='remove') { document.execCommand('removeFormat',false,null); document.execCommand('backColor',false,'transparent'); }
+            else { document.execCommand('backColor',false,c); }
+            document.designMode = 'off'; sel.removeAllRanges(); hMenu.style.display='none';
+        }
+    }
+
+    function submitTest() {
+        let score = 0;
+        const body = document.getElementById('resultsBody'); 
+        if(body) body.innerHTML='';
+        
+        for(let i=14; i<=26; i++) {
+            let uAns = "";
+            let correctStr = answers[i] || "N/A";
+            let correctArr = correctStr.split('|').map(x => x.toUpperCase());
+            let isCorrect = false;
+
+            let el = document.getElementById(`q${i}`);
+            if(el && el.tagName === 'INPUT') uAns = el.value;
+            else if(document.querySelector(`input[name="q${i}"]:checked`)) {
+                uAns = document.querySelector(`input[name="q${i}"]:checked`).value;
+            }
+
+            uAns = (uAns || "-").trim().toUpperCase();
+            
+            if(correctArr.includes(uAns)) {
+               isCorrect = true;
+               score++;
+            }
+            
+            if(el && el.tagName === 'INPUT') {
+                el.classList.remove('correct', 'incorrect');
+                el.classList.add(isCorrect ? 'correct' : 'incorrect');
+            } else if (document.querySelector(`input[name="q${i}"]`)) {
+                document.querySelectorAll(`input[name="q${i}"]`).forEach(radio => {
+                    radio.parentElement.classList.remove('cell-correct', 'cell-incorrect');
+                });
+                let checkedRadio = document.querySelector(`input[name="q${i}"]:checked`);
+                if(checkedRadio) {
+                    checkedRadio.parentElement.classList.add(isCorrect ? 'cell-correct' : 'cell-incorrect');
+                }
+            }
+
+            let displayCorrect = correctArr[0];
+
+            if(body) {
+               body.innerHTML += `
+               <tr onclick="jumpToQ(${i})" style="cursor:pointer;" title="Click to review this question">
+                <td>${i}</td>
+                <td style="color:${isCorrect===true ? 'green' : 'red'}; font-weight:bold;">${uAns}</td>
+                <td style="font-weight:bold;">${displayCorrect}</td>
+                <td>${(isCorrect===true)?'Correct':'Incorrect'}</td>
+               </tr>`;
+            }
+        }
+        const scoreEl = document.getElementById('finalScore');
+        if(scoreEl) scoreEl.innerText = `Score: ${score} / 13`;
+        const modal = document.getElementById('resultsModal');
+        if(modal) modal.style.display='flex';
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

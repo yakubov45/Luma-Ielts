@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Vocabulary Practice</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #f4f7f6; 
+            color: #333; 
+            margin: 0; 
+            padding: 40px 20px; 
+        }
+        .container { 
+            max-width: 800px; 
+            margin: 0 auto; 
+            background: #fff; 
+            padding: 40px; 
+            border-radius: 12px; 
+            box-shadow: 0 8px 16px rgba(0,0,0,0.05); 
+        }
+        .top-bar {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 25px;
+            margin-bottom: 30px;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+        .timer {
+            font-size: 28px;
+            font-weight: bold;
+            color: #e74c3c;
+            font-family: monospace;
+            letter-spacing: 2px;
+        }
+        .tg-link {
+            text-decoration: none;
+            background-color: #2b5278;
+            color: white;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: background-color 0.2s;
+        }
+        .tg-link:hover {
+            background-color: #1c3854;
+        }
+        h1, h2 { color: #2c3e50; }
+        h1 { 
+            text-align: center; 
+            border-bottom: 2px solid #3498db; 
+            padding-bottom: 15px; 
+            margin-bottom: 30px;
+            margin-top: 0;
+        }
+        h2 {
+            margin-top: 30px;
+            font-size: 1.4em;
+        }
+        .vocab-table { 
+            width: 100%; 
+            border-collapse: collapse; 
+            margin-bottom: 30px; 
+            font-size: 0.95em;
+        }
+        .vocab-table th, .vocab-table td { 
+            border: 1px solid #e0e0e0; 
+            padding: 12px; 
+            text-align: left; 
+        }
+        .vocab-table th { 
+            background-color: #f8f9fa; 
+            font-weight: 600; 
+            color: #2c3e50;
+        }
+        .question { 
+            margin-bottom: 25px; 
+            font-size: 16px; 
+            line-height: 1.8; 
+            padding-bottom: 10px;
+            border-bottom: 1px dashed #eee;
+        }
+        .question:last-child {
+            border-bottom: none;
+        }
+        select { 
+            padding: 6px 10px; 
+            font-size: 15px; 
+            border: 2px solid #dce4ec; 
+            border-radius: 6px; 
+            background-color: #fff;
+            color: #2c3e50;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+        select:disabled {
+            background-color: #f2f2f2;
+            cursor: not-allowed;
+            color: #7f8c8d;
+        }
+        .correct { 
+            border-color: #27ae60; 
+            background-color: #eafaf1; 
+            color: #27ae60;
+        }
+        .incorrect { 
+            border-color: #e74c3c; 
+            background-color: #fceae9; 
+            color: #e74c3c;
+        }
+        button { 
+            background-color: #3498db; 
+            color: #fff; 
+            border: none; 
+            padding: 12px 24px; 
+            font-size: 16px; 
+            font-weight: bold;
+            border-radius: 6px; 
+            cursor: pointer; 
+            display: block; 
+            margin: 30px auto 10px; 
+            transition: background-color 0.2s;
+        }
+        button:hover { background-color: #2980b9; }
+        button:disabled { background-color: #95a5a6; cursor: not-allowed; }
+        .result { 
+            text-align: center; 
+            font-size: 20px; 
+            font-weight: bold; 
+            margin-top: 15px; 
+            min-height: 30px;
+            color: #2c3e50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        
+        <div class="top-bar">
+            <div class="timer" id="timer">10:00</div>
+            <a href="https://t.me/khamidovs_ielts" target="_blank" class="tg-link">
+                <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path d="M12 0C5.373 0 0 5.373 0 12s5.373 12 12 12 12-5.373 12-12S18.627 0 12 0zm5.894 8.221l-1.97 9.28c-.145.658-.537.818-1.084.508l-3-2.21-1.446 1.394c-.14.18-.357.295-.6.295-.002 0-.003 0-.005 0l.213-3.054 5.56-5.022c.24-.213-.054-.334-.373-.121l-6.869 4.326-2.96-.924c-.64-.203-.658-.64.135-.954l11.566-4.458c.538-.196 1.006.128.832.94z"/>
+                </svg>
+                Join Khamidov's IELTS
+            </a>
+        </div>
+
+        <h1>Advanced Vocabulary Practice</h1>
+        
+        <h2>Reference Guide</h2>
+        <table class="vocab-table">
+            <tr>
+                <th>Word / Phrase</th>
+                <th>Uzbek Translation</th>
+            </tr>
+            <tr><td><strong>prominent</strong></td><td>taniqli; nufuzli</td></tr>
+            <tr><td><strong>distinguished</strong></td><td>mashhur; obro‘li; nufuzli</td></tr>
+            <tr><td><strong>grow discontented</strong></td><td>asta-sekin norozi bo‘lib bormoq</td></tr>
+            <tr><td><strong>be cut short</strong></td><td>erta tugamoq; to‘satdan yakunlanmoq</td></tr>
+            <tr><td><strong>consolidate</strong></td><td>mustahkamlamoq; kuchaytirmoq</td></tr>
+            <tr><td><strong>a great deal of</strong></td><td>juda ko‘p; katta miqdorda</td></tr>
+            <tr><td><strong>dedication</strong></td><td>fidoyilik / sadoqat / berilish</td></tr>
+            <tr><td><strong>disdain for</strong></td><td>mensimaslik / nafrat bilan qarash / past nazar bilan qarash</td></tr>
+            <tr><td><strong>solidify</strong></td><td>mustahkamlamoq / yanada kuchaytirmoq</td></tr>
+            <tr><td><strong>respectively</strong></td><td>tegishlicha / mos ravishda</td></tr>
+        </table>
+
+        <h2>Part 1: Fill in the Blanks</h2>
+        <p style="color: #7f8c8d; margin-bottom: 25px;">Select the correct word or phrase from the dropdown menus to complete each sentence.</p>
+        
+        <div id="quiz">
+            <div class="question"><strong>1.</strong> The new environmental policy requires <select id="q1"></select> investment from the government.</div>
+            <div class="question"><strong>2.</strong> The recent merger will help the company <select id="q2"></select> its dominance in the global tech industry.</div>
+            <div class="question"><strong>3.</strong> Over the years, the citizens began to <select id="q3"></select> with the local government's failure to repair the infrastructure.</div>
+            <div class="question"><strong>4.</strong> The traditional art critic made no secret of his <select id="q4"></select> modern abstract painting.</div>
+            <div class="question"><strong>5.</strong> She is a <select id="q5"></select> figure in the medical community, often speaking at international conferences.</div>
+            <div class="question"><strong>6.</strong> The first and second place winners received a gold and silver medal, <select id="q6"></select>.</div>
+            <div class="question"><strong>7.</strong> The university invited several <select id="q7"></select> guests to speak at the annual graduation ceremony.</div>
+            <div class="question"><strong>8.</strong> Achieving a high band score in IELTS requires immense <select id="q8"></select> and consistent daily practice.</div>
+            <div class="question"><strong>9.</strong> The manager decided to <select id="q9"></select> the three smaller departments into one large team to improve efficiency.</div>
+            <div class="question"><strong>10.</strong> The outdoor concert had to <select id="q10"></select> due to an unexpected and severe thunderstorm.</div>
+        </div>
+
+        <button onclick="checkAnswers()" id="submit-btn">Check Answers</button>
+        <div id="score" class="result"></div>
+
+    </div>
+
+    <script>
+        // Words are alphabetized for the dropdown menu
+        const words = [
+            "--- Select ---",
+            "a great deal of",
+            "be cut short",
+            "consolidate",
+            "dedication",
+            "disdain for",
+            "distinguished",
+            "grow discontented",
+            "prominent",
+            "respectively",
+            "solidify"
+        ];
+        
+        // Answers correspond to the shuffled sentences
+        const answers = {
+            q1: "a great deal of",
+            q2: "solidify",
+            q3: "grow discontented",
+            q4: "disdain for",
+            q5: "prominent",
+            q6: "respectively",
+            q7: "distinguished",
+            q8: "dedication",
+            q9: "consolidate",
+            q10: "be cut short"
+        };
+
+        // Populate selects
+        document.querySelectorAll('select').forEach(select => {
+            words.forEach(word => {
+                let option = document.createElement('option');
+                option.value = word === "--- Select ---" ? "" : word;
+                option.text = word;
+                select.appendChild(option);
+            });
+        });
+
+        // Timer Logic
+        let timeLeft = 10 * 60; // 10 minutes in seconds
+        const timerElement = document.getElementById('timer');
+        let timerId;
+
+        function updateTimer() {
+            const minutes = Math.floor(timeLeft / 60);
+            let seconds = timeLeft % 60;
+            
+            // Formatting to ensure double digits
+            const displayMinutes = minutes < 10 ? '0' + minutes : minutes;
+            const displaySeconds = seconds < 10 ? '0' + seconds : seconds;
+            
+            timerElement.innerText = `${displayMinutes}:${displaySeconds}`;
+            
+            if (timeLeft === 0) {
+                clearInterval(timerId);
+                alert("Time is up! Let's check your answers.");
+                checkAnswers(true); 
+            } else {
+                timeLeft--;
+            }
+        }
+
+        // Start timer when page loads
+        window.onload = function() {
+            updateTimer(); 
+            timerId = setInterval(updateTimer, 1000);
+        };
+
+        function checkAnswers(timeUp = false) {
+            let score = 0;
+            let answered = 0;
+            
+            // Stop the timer
+            clearInterval(timerId);
+            
+            for (let key in answers) {
+                let select = document.getElementById(key);
+                select.classList.remove('correct', 'incorrect');
+                
+                // Disable to prevent changing after checking
+                select.disabled = true;
+                document.getElementById('submit-btn').disabled = true;
+                
+                if (select.value !== "") {
+                    answered++;
+                    if (select.value === answers[key]) {
+                        select.classList.add('correct');
+                        score++;
+                    } else {
+                        select.classList.add('incorrect');
+                    }
+                } else {
+                    select.classList.add('incorrect'); 
+                }
+            }
+            
+            const scoreDiv = document.getElementById('score');
+            if (answered < 10 && !timeUp) {
+                scoreDiv.innerText = `You scored ${score} out of 10. (Some left blank)`;
+            } else {
+                scoreDiv.innerText = `You scored ${score} out of 10!`;
+            }
+            scoreDiv.style.color = score === 10 ? "#27ae60" : "#2c3e50";
+        }
+    </script>
+</body>
+</html>

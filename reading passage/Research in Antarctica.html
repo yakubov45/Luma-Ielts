@@ -1,0 +1,747 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Reading Simulator - The Development of Exploration and Scientific Research in Antarctica</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+<style>
+    /* --- VARIABLES --- */
+    :root {
+        --base-size: 14px;
+        --header-bg: #ffffff;
+        --header-text: #333333;
+        --bg-app: #f4f4f4;
+        --bg-paper: #ffffff;
+        --text-main: #000000;
+        --border-color: #dcdcdc;
+        --footer-bg: #e0e0e0;
+        --active-q-bg: #333;
+        --active-q-text: #fff;
+        --instruction-bg: #fdfdfd;
+        --instruction-border: #888;
+    }
+
+    /* THEMES */
+    body.theme-dark {
+        --header-bg: #1a1a1a; --header-text: #fff; --bg-app: #333; --bg-paper: #000;
+        --text-main: #ccc; --border-color: #555; --footer-bg: #222;
+        --active-q-bg: #ccc; --active-q-text: #000; --instruction-bg: #222; --instruction-border: #777;
+    }
+    body.theme-yellow {
+        --header-bg: #000; --header-text: #ff0; --bg-app: #111; --bg-paper: #000;
+        --text-main: #ff0; --border-color: #ff0; --footer-bg: #111;
+        --active-q-bg: #ff0; --active-q-text: #000; --instruction-bg: #111; --instruction-border: #ff0;
+    }
+
+    /* SIZES */
+    body.text-reg { --base-size: 14px; }
+    body.text-med { --base-size: 16px; }
+    body.text-lg { --base-size: 18px; }
+    body.text-xl { --base-size: 22px; }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0; padding: 0;
+        font-family: 'Verdana', sans-serif;
+        height: 100vh;
+        display: flex; flex-direction: column;
+        background-color: var(--bg-app);
+        color: var(--text-main);
+        overflow: hidden;
+        font-size: var(--base-size);
+    }
+
+    /* --- HEADER --- */
+    .top-bar {
+        background-color: var(--header-bg);
+        color: var(--header-text);
+        height: 60px;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 20px; flex-shrink: 0;
+        border-bottom: 1px solid var(--border-color);
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .top-left { font-weight: bold; font-size: 1.1em; }
+    
+    .timer-group {
+        position: absolute; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 15px;
+    }
+    .timer { font-size: 1.4em; font-weight: bold; color: #d32f2f; font-family: monospace; }
+    
+    .telegram-link {
+        text-decoration: none; color: #0088cc; font-size: 0.9em;
+        display: flex; align-items: center; gap: 5px;
+        background: rgba(0, 136, 204, 0.1); padding: 4px 10px; border-radius: 15px;
+        transition: background 0.2s;
+    }
+    .telegram-link:hover { background: rgba(0, 136, 204, 0.2); }
+
+    /* Settings Menu */
+    .settings-menu {
+        position: absolute; top: 60px; right: 10px;
+        background: var(--header-bg); border: 1px solid var(--border-color);
+        padding: 15px; border-radius: 4px; display: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1000; width: 220px;
+        color: var(--header-text);
+    }
+    .s-btn { 
+        display: block; width: 100%; padding: 8px 10px; cursor: pointer; font-size: 13px; 
+        border: 1px solid var(--border-color); background: var(--bg-paper); 
+        color: var(--text-main); margin-bottom: 6px; text-align: left; border-radius: 3px;
+    }
+    .s-btn:hover { background: var(--border-color); }
+
+    /* --- INSTRUCTION BANNER --- */
+    .instruction-banner {
+        background-color: #f0f0f0; padding: 8px 20px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.95em; color: #333; flex-shrink: 0;
+    }
+    body.theme-dark .instruction-banner { background-color: #333; color: #fff; }
+    body.theme-yellow .instruction-banner { background-color: #222; color: #ff0; border-color: #ff0; }
+
+    /* --- MAIN LAYOUT --- */
+    .main-container { display: flex; flex: 1; overflow: hidden; background-color: var(--bg-paper); position: relative; }
+    .passage-pane, .question-pane { padding: 30px; overflow-y: auto; line-height: 1.7; outline: none; height: 100%; }
+    .passage-pane { width: 50%; border-right: 2px solid var(--border-color); font-family: 'Times New Roman', Times, serif; font-size: 1.1em; }
+    .question-pane { flex: 1; font-family: 'Verdana', sans-serif; }
+    .passage-content, .question-content { display: none; }
+    .passage-content.active, .question-content.active { display: block; }
+    
+    .passage-pane h2 { font-size: 1.5em; margin-bottom: 25px; font-weight: bold; color: var(--text-main); }
+    .passage-pane p { margin-bottom: 15px; text-align: justify; }
+    
+    .divider { width: 8px; background: #f0f0f0; cursor: col-resize; border-left: 1px solid #ddd; border-right: 1px solid #ddd; z-index: 10; }
+    body.theme-dark .divider { background: #444; border-color: #555; }
+    body.theme-yellow .divider { background: #222; border-color: #ff0; }
+
+    /* --- INSTRUCTION BOXES & LISTS --- */
+    .instruction-box { border: 1px solid var(--instruction-border); background-color: var(--instruction-bg); padding: 15px; margin-bottom: 25px; font-size: 0.9em; }
+    .instruction-box h3 { margin: 0 0 5px 0; font-size: 1em; text-transform: uppercase; }
+    .instruction-box p { margin: 5px 0 0 0; }
+    
+    .q-item-block { margin-bottom: 20px; transition: background-color 0.3s; }
+    .q-num-plain { display: inline-block; min-width: 20px; font-weight: bold; margin-right: 5px; color: var(--text-main); flex-shrink: 0;}
+    
+    .gap-input { 
+        text-align: center; font-weight: bold; 
+        border-bottom: 2px solid #333; border-top:none; border-left:none; border-right:none; 
+        background: transparent; color: var(--text-main); font-size: inherit; margin: 0 5px;
+    }
+    .gap-input.long { width: 200px; }
+    .gap-input.short { width: 120px; }
+    .gap-input:focus { outline: none; border-bottom: 2px solid #0088cc; }
+    .gap-input.correct { color: green !important; border-bottom-color: green !important; }
+    .gap-input.incorrect { color: red !important; border-bottom-color: red !important; }
+    body.theme-dark .gap-input { border-bottom-color: #ccc; }
+    body.theme-yellow .gap-input { border-bottom-color: #ff0; }
+
+    .tf-question { margin-bottom: 25px; }
+    .tf-options { 
+        margin-left: 25px; 
+        margin-top: 10px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 8px; 
+    }
+    .tf-options label { 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        transition: background-color 0.2s; 
+        cursor: pointer; 
+        width: fit-content; 
+    }
+    .tf-options input[type="radio"], .tf-options input[type="checkbox"] { 
+        transform: scale(1.2); 
+        margin-right: 8px; 
+        cursor: pointer; 
+    }
+
+    .cell-correct { background-color: rgba(0, 200, 0, 0.2) !important; }
+    .cell-incorrect { background-color: rgba(255, 0, 0, 0.2) !important; }
+
+    .summary-text { line-height: 2.2; }
+    .notes-list { margin-top: 10px; padding-left: 20px; }
+    .notes-list > li { margin-bottom: 15px; }
+    
+    /* --- FOOTER --- */
+    .footer-bar { height: 60px; background-color: var(--footer-bg); border-top: 1px solid var(--border-color); display: flex; align-items: stretch; padding: 0; flex-shrink: 0; }
+    .footer-parts-container { display: flex; flex: 1; width: 100%; }
+    .footer-part-item { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 20px; cursor: pointer; border-right: 1px solid #ccc; transition: background 0.2s; }
+    body.theme-dark .footer-part-item { border-right-color: #555; }
+    body.theme-yellow .footer-part-item { border-right-color: #ff0; }
+    .footer-part-item:hover { background-color: rgba(0,0,0,0.05); }
+    body.theme-dark .footer-part-item:hover { background-color: rgba(255,255,255,0.1); }
+    body.theme-yellow .footer-part-item:hover { background-color: #222; }
+    
+    .part-content-wrapper { display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%; }
+    .p-label { font-weight: bold; font-size: 15px; color: var(--text-main); white-space: nowrap; }
+    .p-count { font-weight: bold; font-size: 13px; color: #0088cc; white-space: nowrap; } 
+    body.theme-dark .p-count { color: #44ccff; }
+    body.theme-yellow .p-count { color: #ff0; }
+
+    .q-numbers-list { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; margin-top: 4px; padding-bottom: 2px; }
+    .q-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 1px solid #999; cursor: pointer; color: #333; background: #fff; border-radius: 2px; font-size: 12px; flex-shrink: 0; }
+    .q-btn:hover { background: #ccc; }
+    .q-btn.answered { background-color: var(--active-q-bg); color: var(--active-q-text); border-color: var(--text-main); font-weight: bold; }
+
+    .submit-container { width: 60px; background: #ccc; display: flex; align-items: center; justify-content: center; cursor: pointer; border-left: 1px solid #999; }
+    .submit-container:hover { background: #bbb; }
+    .submit-icon { font-size: 20px; color: #333; }
+    body.theme-dark .submit-container { background: #444; border-left-color: #555; }
+    body.theme-dark .submit-icon { color: #fff; }
+    body.theme-yellow .submit-container { background: #333; border-left-color: #ff0; }
+    body.theme-yellow .submit-icon { color: #ff0; }
+
+    /* --- HIGHLIGHTER --- */
+    #highlightMenu { position: absolute; display: none; background: #fff; padding: 5px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 9999; }
+    .hl-color { width: 24px; height: 24px; display: inline-block; margin: 0 4px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; }
+
+    /* --- MODAL --- */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items: center; justify-content: center; }
+    .modal-content { background: #fff; width: 85%; max-width: 900px; height: 85%; border-radius: 4px; display: flex; flex-direction: column; color: #000; padding: 20px; }
+    .modal-header { display: flex; justify-content: space-between; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+    .modal-body { flex: 1; overflow-y: auto; }
+    .result-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .result-table th, .result-table td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    .result-table tbody tr:hover { background-color: rgba(0,0,0,0.05); }
+    body.theme-dark .result-table tbody tr:hover { background-color: rgba(255,255,255,0.1); }
+    body.theme-yellow .result-table tbody tr:hover { background-color: rgba(255,255,0,0.2); }
+    .status-correct { color: green; font-weight: bold; }
+    .status-incorrect { color: red; font-weight: bold; }
+</style>
+</head>
+<body class="theme-standard text-reg">
+
+    <div class="top-bar">
+        <div class="top-left">IELTS Reading test simulator</div>
+        <div class="timer-group">
+            <div class="timer" id="timer">00:00</div>
+            <a href="https://t.me/khamidovs_ielts" target="_blank" class="telegram-link"><i class="fab fa-telegram-plane"></i> @khamidovs_ielts</a>
+        </div>
+        <div style="font-size:18px; cursor:pointer; padding:5px;" onclick="toggleSettings()"><i class="fas fa-bars"></i></div>
+        <div class="settings-menu" id="settingsMenu">
+            <h4 style="margin:0 0 10px 0; border-bottom: 1px solid var(--border-color); padding-bottom:5px;">Settings</h4>
+            <div style="margin-bottom:15px;">
+                <div style="font-weight:bold; margin-bottom:5px;">Text Size</div>
+                <div style="display:flex; flex-direction:column;">
+                    <button class="s-btn" onclick="setSize('text-reg')">Standard</button>
+                    <button class="s-btn" onclick="setSize('text-med')">Medium</button>
+                    <button class="s-btn" onclick="setSize('text-lg')">Large</button>
+                    <button class="s-btn" onclick="setSize('text-xl')">Extra Large</button>
+                </div>
+            </div>
+            <div>
+                <div style="font-weight:bold; margin-bottom:5px;">Color Mode</div>
+                <div style="display:flex; flex-direction:column;">
+                    <button class="s-btn" onclick="setTheme('theme-standard')">Standard</button>
+                    <button class="s-btn" onclick="setTheme('theme-dark')">White on Black</button>
+                    <button class="s-btn" onclick="setTheme('theme-yellow')">Yellow on Black</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="instruction-banner" id="topInstruction">You should spend about 20 minutes on Questions 1-13, which are based on Reading Passage 1.</div>
+
+    <div class="main-container">
+        <!-- PASSAGE PANE -->
+        <div class="passage-pane" id="passagePane">
+            <div id="p-content-1" class="passage-content active">
+                <h2>The Development of Exploration and Scientific Research in Antarctica</h2>
+
+                <p>The modern scientific age in Antarctica really began with the introduction of aircraft in the 1920s. Aircraft transformed the possibilities of exploring the frozen continent around the South Pole, because before that Antarctic travel had been limited to the use of dog-teams pulling sledges. A plane could survey thousands of square kilometres an hour, equivalent to a whole summer's work using previous techniques. However, the first planes in Antarctica, such as the Lockheed Vega and the Ford Trimotor, were unreliable in freezing conditions. This made polar flying particularly hazardous, since there was little chance of rescue if a plane was forced down in a remote region.</p>
+
+                <p>It was in 1928 that Herbert Wilkins hoped to make the first flight in Antarctica, attempting to cross the continent. A further attempt in 1930 was also unsuccessful, but Wilkins' aerial photographs seemed to show that the Antarctic Peninsula was in fact an island, not part of the continent as had previously been thought. This new theory caused some excitement among geographers and cartographers. However, the British Grahamland Expedition of 1934-37 proved conclusively that the Antarctic Peninsula was attached to the rest of the continent.</p>
+
+                <p>In 1929, the famous American pilot Richard Byrd flew over the South Pole, and another American, Lincoln Ellsworth, made a successful Antarctic flight in 1935. Although Ellsworth claimed a sector of the continent for the USA, the American government did not follow it up. In 1938, the German explorer, Alfred Ritscher, led an expedition south across the sea. Once Antarctica was reached, the aircraft that had been stored in pieces on the ship's deck was reconstructed. The aeroplane was then launched and used to stake a claim to one section of Antarctica by dropping thousands of tiny flags from the air.</p>
+
+                <p>A significant motivation behind many Antarctic expeditions right up to the 1940s was simply the spirit of adventure. Many of these expeditions had a large measure of private funding, and often the subsequent book about the expedition was a means of clearing debts incurred. The vast majority of Antarctic expeditions since 1940 have been funded by governments, usually for political reasons and scientific research.</p>
+
+                <p>The setting up of the Research and Development Committee in Britain was a significant development in the history of science in the Antarctic. The Committee's report, published in 1920, focused particularly on the sea that circles the Antarctic continent. The report proposed detailed scientific investigations of the physiology and behaviour of the whales inhabiting the region. As a result, a shore station at Grytviken on the island of South Georgia near Antarctica was occupied by scientists for six years. In addition, three research ships were commissioned. They travelled through the Southern Ocean all year, researching physical and chemical oceanography. The high quality of the specimens and data collected by scientists produced nearly 40 large volumes of reports. This entire project came to be known as the Discovery Investigations. The costs of the Discovery Investigations were completely covered by the proceeds of a tax that was placed on whaling businesses operating in the area.</p>
+
+                <p>It was in 1875 that the idea of international scientific collaboration at the poles was first proposed, with the aim of collecting valuable data. The result was the first Polar Year in 1882-83. A second Polar Year was organised 50 years later, involving 44 nations and scientific bodies. Both of these Polar Years had been timed to coincide with a period when the sun was at its lowest level of activity, in order to monitor the impact this had. So much interest was aroused by this process that a third Polar Year was organised 25 years later. In 1951 it was decided that this scientific programme should be expanded to cover the globe. This new project was renamed the International Geophysical Year (IGY). Antarctica was chosen as an area for particular attention because of its important influence on global weather. Throughout this period, politics were kept firmly in the background.</p>
+
+                <p>The IGY took place in 1957-58 and it was during this period that the last great Antarctic journey was accomplished. Dr Vivian Fuchs' privately-funded Trans Antarctic Expedition finally achieved what the explorer Ernest Shackleton had first set out to do in 1914. Driving modified tractors, Fuchs' team traversed Antarctica from coast to coast in 99 days and covered 2,180 miles or roughly 3,500 kilometres. But there were scientific objectives as well, because the expedition's measurements allowed the first estimates to be made of the volume of ice that existed across the whole continent. So successful was the IGY that it was extended for a further year in order to promote Antarctic science. It also led directly to the signing of a treaty by members of the international community to regulate human conduct in Antarctica over the years ahead.</p>
+            </div>
+        </div>
+
+        <div class="divider" id="divider"></div>
+
+        <div class="question-pane" id="questionPane">
+            <div id="q-content-1" class="question-content active">
+                
+                <div class="instruction-box">
+                    <h3>Questions 1 - 6</h3>
+                    <p>Do the following statements agree with the information given in Reading Passage 1?</p>
+                    <p>In boxes 1-6 on your answer sheet, write</p>
+                    <p>
+                        <strong>TRUE</strong> if the statement agrees with the information<br>
+                        <strong>FALSE</strong> if the statement contradicts the information<br>
+                        <strong>NOT GIVEN</strong> if there is no information on this
+                    </p>
+                </div>
+                
+                <div class="q-item-block" style="margin-bottom: 30px;">
+                    <!-- Question 1 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">1</span>
+                            <span>Until the 1920s, humans relied on animals to explore Antarctica.</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q1" value="TRUE" onchange="updateAnswerStatus(1)"> TRUE</label>
+                            <label><input type="radio" name="q1" value="FALSE" onchange="updateAnswerStatus(1)"> FALSE</label>
+                            <label><input type="radio" name="q1" value="NOT GIVEN" onchange="updateAnswerStatus(1)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+
+                    <!-- Question 2 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">2</span>
+                            <span>Herbert Wilkins failed to fly across the Antarctic continent in 1928.</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q2" value="TRUE" onchange="updateAnswerStatus(2)"> TRUE</label>
+                            <label><input type="radio" name="q2" value="FALSE" onchange="updateAnswerStatus(2)"> FALSE</label>
+                            <label><input type="radio" name="q2" value="NOT GIVEN" onchange="updateAnswerStatus(2)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+
+                    <!-- Question 3 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">3</span>
+                            <span>The expedition of 1934-37 confirmed a new theory about the Antarctic Peninsula.</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q3" value="TRUE" onchange="updateAnswerStatus(3)"> TRUE</label>
+                            <label><input type="radio" name="q3" value="FALSE" onchange="updateAnswerStatus(3)"> FALSE</label>
+                            <label><input type="radio" name="q3" value="NOT GIVEN" onchange="updateAnswerStatus(3)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+
+                    <!-- Question 4 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">4</span>
+                            <span>Lincoln Ellsworth was influenced by the flight of Richard Byrd.</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q4" value="TRUE" onchange="updateAnswerStatus(4)"> TRUE</label>
+                            <label><input type="radio" name="q4" value="FALSE" onchange="updateAnswerStatus(4)"> FALSE</label>
+                            <label><input type="radio" name="q4" value="NOT GIVEN" onchange="updateAnswerStatus(4)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+
+                    <!-- Question 5 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">5</span>
+                            <span>The government of the USA claimed part of Antarctica in 1935.</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q5" value="TRUE" onchange="updateAnswerStatus(5)"> TRUE</label>
+                            <label><input type="radio" name="q5" value="FALSE" onchange="updateAnswerStatus(5)"> FALSE</label>
+                            <label><input type="radio" name="q5" value="NOT GIVEN" onchange="updateAnswerStatus(5)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+
+                    <!-- Question 6 -->
+                    <div class="tf-question">
+                        <div style="display: flex; align-items: baseline;">
+                            <span class="q-num-plain">6</span>
+                            <span>After 1940, nations rather than individuals paid for most Antarctic expeditions.</span>
+                        </div>
+                        <div class="tf-options">
+                            <label><input type="radio" name="q6" value="TRUE" onchange="updateAnswerStatus(6)"> TRUE</label>
+                            <label><input type="radio" name="q6" value="FALSE" onchange="updateAnswerStatus(6)"> FALSE</label>
+                            <label><input type="radio" name="q6" value="NOT GIVEN" onchange="updateAnswerStatus(6)"> NOT GIVEN</label>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="instruction-box" style="margin-top: 35px;">
+                    <h3>Questions 7 - 13</h3>
+                    <p>Complete the notes below.</p>
+                    <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+                    <p>Write your answers in boxes 7-13 on your answer sheet.</p>
+                </div>
+                
+                <div class="q-item-block summary-text">
+                    <h3 style="margin-bottom: 10px;">Scientific Research</h3>
+                    
+                    <ul class="notes-list" style="margin-top: 0; list-style-type: disc;">
+                        <li>a 1920 report called for research into the whales in the sea around Antarctica</li>
+                        <li>researchers worked from the station at Grytviken and also from several <span class="q-num-plain">7</span> <input type="text" id="q7" class="gap-input short" oninput="updateAnswerStatus(7)"></li>
+                        <li>local companies paid a <span class="q-num-plain">8</span> <input type="text" id="q8" class="gap-input short" oninput="updateAnswerStatus(8)"> which funded the Discovery Investigations</li>
+                        <li>the first two Polar Years researched the effects of the <span class="q-num-plain">9</span> <input type="text" id="q9" class="gap-input short" oninput="updateAnswerStatus(9)"></li>
+                        <li>Antarctica affects the world's <span class="q-num-plain">10</span> <input type="text" id="q10" class="gap-input short" oninput="updateAnswerStatus(10)"> so it was a focus for the IGY</li>
+                        <li>Vivian Fuchs' expedition crossed Antarctica using special <span class="q-num-plain">11</span> <input type="text" id="q11" class="gap-input short" oninput="updateAnswerStatus(11)"></li>
+                        <li>the total amount of <span class="q-num-plain">12</span> <input type="text" id="q12" class="gap-input short" oninput="updateAnswerStatus(12)"> in Antarctica was calculated by Fuchs' expedition</li>
+                        <li>one result of the IGY was the establishment of a <span class="q-num-plain">13</span> <input type="text" id="q13" class="gap-input short" oninput="updateAnswerStatus(13)"> to control aspects of Antarctica's future</li>
+                    </ul>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bar" id="footerBar">
+        <!-- Footer Nav injected via JS -->
+    </div>
+
+    <!-- Highlight Menu -->
+    <div id="highlightMenu">
+        <span class="hl-color" style="background:#ffff00" onmousedown="applyHighlight('yellow', event)"></span>
+        <span class="hl-color" style="background:#44ff44" onmousedown="applyHighlight('#44ff44', event)"></span>
+        <span class="hl-color" style="background:#44ccff" onmousedown="applyHighlight('#44ccff', event)"></span>
+        <span class="hl-color" style="background:#fff; color:#333; text-align:center; line-height:22px; font-weight:bold; font-size:12px; border: 1px solid #ccc;" onmousedown="applyHighlight('remove', event)">X</span>
+    </div>
+
+    <!-- Results Modal -->
+    <div class="modal-overlay" id="resultsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="margin: 0;">Test Results</h2>
+                <button onclick="document.getElementById('resultsModal').style.display='none'" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h1 style="text-align:center; margin-top: 0;" id="finalScore"></h1>
+                <table class="result-table">
+                    <thead><tr><th>Q</th><th>Your Answer</th><th>Correct Answer</th><th>Status</th></tr></thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+            <div style="padding: 20px; text-align:center; border-top: 1px solid #ddd;">
+                <button onclick="document.getElementById('resultsModal').style.display='none'" style="padding:10px 20px; cursor:pointer; font-size: 16px; background: #000; color: #fff; border: none; border-radius: 4px;">Review Mistakes</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- TIMER LOGIC (Stopwatch - Counts Up) ---
+    let time = 0; 
+    const timerInterval = setInterval(() => {
+        time++;
+        const m = Math.floor(time / 60).toString().padStart(2, '0');
+        const s = (time % 60).toString().padStart(2, '0');
+        const el = document.getElementById('timer');
+        if(el) el.innerText = `${m}:${s}`;
+    }, 1000);
+
+    const partsConfig = {
+        1: { start: 1, end: 13, instr: "You should spend about 20 minutes on Questions 1-13, which are based on Reading Passage 1." }
+    };
+    let currentPart = 1;
+
+    // ANSWER KEY
+    const answers = { 
+        1:'TRUE', 
+        2:'TRUE', 
+        3:'FALSE', 
+        4:'NOT GIVEN', 
+        5:'FALSE', 
+        6:'TRUE', 
+        7:'SHIPS', 
+        8:'TAX', 
+        9:'SUN', 
+        10:'WEATHER', 
+        11:'TRACTORS', 
+        12:'ICE', 
+        13:'TREATY'
+    };
+
+    function init() {
+        renderFooter();
+        
+        const divider = document.getElementById('divider');
+        const pPane = document.getElementById('passagePane');
+        let isDrag = false;
+        if(divider && pPane) {
+            divider.addEventListener('mousedown', (e) => { isDrag = true; e.preventDefault(); });
+            document.addEventListener('mouseup', () => isDrag = false);
+            document.addEventListener('mousemove', (e) => {
+                if(isDrag) {
+                    let pct = (e.clientX / window.innerWidth) * 100;
+                    if(pct > 20 && pct < 80) pPane.style.width = pct + '%';
+                }
+            });
+        }
+        
+        setupHighlighter();
+    }
+
+    function setPart(p) {
+        currentPart = p;
+        document.querySelectorAll('.passage-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.question-content').forEach(el => el.classList.remove('active'));
+        const pContent = document.getElementById(`p-content-${p}`);
+        const qContent = document.getElementById(`q-content-${p}`);
+        if(pContent) pContent.classList.add('active');
+        if(qContent) qContent.classList.add('active');
+        
+        const pPane = document.getElementById('passagePane');
+        const qPane = document.getElementById('questionPane');
+        if(pPane) pPane.scrollTop = 0;
+        if(qPane) qPane.scrollTop = 0;
+        
+        document.getElementById('topInstruction').innerText = partsConfig[p].instr;
+        renderFooter();
+    }
+
+    // --- IMMEDIATE UPDATE LOGIC ---
+    function updateAnswerStatus(q) {
+        const btn = document.getElementById(`btn-q${q}`);
+        if(isAnswered(q)) {
+            if(btn) btn.classList.add('answered');
+        } else {
+            if(btn) btn.classList.remove('answered');
+        }
+        updateProgressCount();
+    }
+
+    function updateProgressCount() {
+        for(let p=1; p<=1; p++) { 
+            const range = partsConfig[1];
+            const total = range.end - range.start + 1;
+            const answeredCount = countAnswered(range.start, range.end);
+            const countEl = document.getElementById(`p-count-1`);
+            if (countEl) countEl.innerText = `${answeredCount} of ${total}`;
+        }
+    }
+
+    function renderFooter() {
+        const footer = document.getElementById('footerBar');
+        if(!footer) return;
+        footer.innerHTML = ''; 
+
+        const partsContainer = document.createElement('div');
+        partsContainer.className = 'footer-parts-container';
+
+        const range = partsConfig[1];
+        const total = range.end - range.start + 1;
+        const answeredCount = countAnswered(range.start, range.end);
+
+        const partItem = document.createElement('div');
+        partItem.className = 'footer-part-item';
+        partItem.onclick = () => setPart(1);
+
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'part-content-wrapper';
+
+        const label = document.createElement('span');
+        label.className = 'p-label';
+        label.innerText = `Questions ${range.start}-${range.end}`;
+        contentWrapper.appendChild(label);
+
+        const list = document.createElement('div');
+        list.className = 'q-numbers-list';
+        for(let q = range.start; q <= range.end; q++) {
+            const btn = document.createElement('div');
+            btn.className = 'q-btn';
+            btn.innerText = q;
+
+            btn.id = `btn-q${q}`;
+            if(isAnswered(q)) btn.classList.add('answered');
+            btn.onclick = (e) => { e.stopPropagation(); scrollToQ(q); };
+            list.appendChild(btn);
+        }
+        contentWrapper.appendChild(list);
+        
+        const count = document.createElement('span');
+        count.className = 'p-count';
+        count.id = `p-count-1`;
+        count.innerText = `${answeredCount} of ${total}`;
+        contentWrapper.appendChild(count);
+
+        partItem.appendChild(contentWrapper);
+        partsContainer.appendChild(partItem);
+        
+        footer.appendChild(partsContainer);
+
+        const subContainer = document.createElement('div');
+        subContainer.className = 'submit-container';
+        subContainer.onclick = submitTest;
+        subContainer.innerHTML = '<i class="fas fa-check submit-icon"></i>';
+        footer.appendChild(subContainer);
+    }
+
+    function scrollToQ(q) {
+        let targetId = `q${q}`;
+
+        const el = document.getElementById(targetId);
+        if(el) {
+            el.scrollIntoView({behavior:'smooth', block:'center'});
+        } else {
+             let inp = document.getElementById(`q${q}_in`) || document.querySelector(`input[name="q${q}"]`);
+             if(!inp) { 
+                 const slot = document.querySelector(`.drop-slot[data-q="${q}"]`);
+                 if(slot) {
+                    slot.scrollIntoView({behavior:'smooth', block:'center'});
+                    return;
+                 }
+                 const sel = document.getElementById(`q${q}`);
+                 if (sel) {
+                    sel.scrollIntoView({behavior:'smooth', block:'center'});
+                    return;
+                 }
+                 return;
+             }
+             if(inp) inp.closest('tr, .q-item, .instruction-box, td, .q-item-block, .tf-question, .tf-options').scrollIntoView({behavior:'smooth', block:'center'});
+        }
+    }
+
+    function jumpToQ(q) {
+        document.getElementById('resultsModal').style.display = 'none';
+        
+        setTimeout(() => {
+            scrollToQ(q);
+            let el = null;
+            let targetId = `q${q}`;
+            el = document.getElementById(targetId) || document.getElementById(`q${q}_in`) || document.querySelector(`input[name="q${q}"]`);
+            if(!el) {
+                const slot = document.querySelector(`.drop-slot[data-q="${q}"]`);
+                if(slot) el = slot;
+                
+                const sel = document.getElementById(`q${q}`);
+                if (sel && !el) el = sel;
+            }
+            
+            if(el) {
+                let container = el.closest('tr, .q-item-block, .q-item, .instruction-box, td, p, li, .summary-text, div.tf-question, .tf-options');
+                if(container) {
+                    let origBg = container.style.backgroundColor;
+                    container.style.backgroundColor = 'rgba(0, 136, 204, 0.2)';
+                    setTimeout(() => { container.style.backgroundColor = origBg; }, 1500);
+                } 
+            }
+        }, 100);
+    }
+
+    function isAnswered(q) {
+        const gap = document.getElementById(`q${q}`);
+        if(gap && gap.tagName === 'INPUT' && gap.value.trim() !== "") return true;
+
+        const radios = document.querySelectorAll(`input[name="q${q}"]:checked`);
+        if(radios.length > 0) return true;
+
+        return false;
+    }
+
+    function countAnswered(start, end) {
+        let c = 0;
+        for(let i=start; i<=end; i++) {
+           if(isAnswered(i)) c++;
+        }
+        return c;
+    }
+
+    function toggleSettings() {
+        const m = document.getElementById('settingsMenu');
+        if(m) m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+    }
+    function setSize(c) {
+        document.body.classList.remove('text-reg','text-med','text-lg','text-xl');
+        document.body.classList.add(c);
+        toggleSettings();
+    }
+    function setTheme(c) {
+        document.body.classList.remove('theme-standard','theme-dark','theme-yellow');
+        document.body.classList.add(c);
+        toggleSettings();
+    }
+
+    function setupHighlighter() {
+        const hMenu = document.getElementById('highlightMenu');
+        let savedRange = null;
+        document.addEventListener('mouseup', (e) => {
+            if(e.target.closest('#highlightMenu') || e.target.closest('.settings-menu')) return;
+            const sel = window.getSelection();
+            if(sel.rangeCount > 0 && sel.toString().length > 0) {
+                const node = sel.anchorNode;
+                if(node && node.parentElement && (node.parentElement.closest('.passage-pane') || node.parentElement.closest('.question-pane'))) {
+                    savedRange = sel.getRangeAt(0).cloneRange();
+                    hMenu.style.display = 'block';
+                    hMenu.style.left = e.pageX + 'px';
+                    hMenu.style.top = (e.pageY - 40) + 'px';
+                    return;
+                }
+            }
+            if(hMenu) hMenu.style.display = 'none';
+        });
+        window.applyHighlight = function(c, e) {
+            e.preventDefault(); e.stopPropagation();
+            if(!savedRange) return;
+            const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange);
+            document.designMode = 'on';
+            if(c==='remove') { document.execCommand('removeFormat',false,null); document.execCommand('backColor',false,'transparent'); }
+            else { document.execCommand('backColor',false,c); }
+            document.designMode = 'off'; sel.removeAllRanges(); hMenu.style.display='none';
+        }
+    }
+
+    function submitTest() {
+        let score = 0;
+        const body = document.getElementById('resultsBody'); 
+        if(body) body.innerHTML='';
+        
+        for(let i=1; i<=13; i++) {
+            let uAns = "";
+            let correctStr = answers[i] || "N/A";
+            let correctArr = correctStr.split('|').map(x => x.toUpperCase());
+            let isCorrect = false;
+
+            let el = document.getElementById(`q${i}`);
+            if(el && el.tagName === 'INPUT') uAns = el.value;
+            else if(document.querySelector(`input[name="q${i}"]:checked`)) {
+                uAns = document.querySelector(`input[name="q${i}"]:checked`).value;
+            }
+
+            uAns = (uAns || "-").trim().toUpperCase();
+            
+            if(correctArr.includes(uAns)) {
+               isCorrect = true;
+               score++;
+            }
+            
+            if(el && el.tagName === 'INPUT') {
+                el.classList.remove('correct', 'incorrect');
+                el.classList.add(isCorrect ? 'correct' : 'incorrect');
+            } else if (document.querySelector(`input[name="q${i}"]`)) {
+                document.querySelectorAll(`input[name="q${i}"]`).forEach(radio => {
+                    radio.parentElement.classList.remove('cell-correct', 'cell-incorrect');
+                });
+                let checkedRadio = document.querySelector(`input[name="q${i}"]:checked`);
+                if(checkedRadio) {
+                    checkedRadio.parentElement.classList.add(isCorrect ? 'cell-correct' : 'cell-incorrect');
+                }
+            }
+
+            let displayCorrect = correctArr[0];
+
+            if(body) {
+               body.innerHTML += `
+               <tr onclick="jumpToQ(${i})" style="cursor:pointer;" title="Click to review this question">
+                <td>${i}</td>
+                <td style="color:${isCorrect===true ? 'green' : 'red'}; font-weight:bold;">${uAns}</td>
+                <td style="font-weight:bold;">${displayCorrect}</td>
+                <td>${(isCorrect===true)?'Correct':'Incorrect'}</td>
+               </tr>`;
+            }
+        }
+        const scoreEl = document.getElementById('finalScore');
+        if(scoreEl) scoreEl.innerText = `Score: ${score} / 13`;
+        const modal = document.getElementById('resultsModal');
+        if(modal) modal.style.display='flex';
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

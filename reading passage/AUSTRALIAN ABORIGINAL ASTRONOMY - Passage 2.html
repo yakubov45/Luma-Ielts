@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IELTS Reading Simulator - Australian Aboriginal Astronomy</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+<style>
+    /* --- VARIABLES --- */
+    :root {
+        --base-size: 14px;
+        --header-bg: #ffffff;
+        --header-text: #333333;
+        --bg-app: #f4f4f4;
+        --bg-paper: #ffffff;
+        --text-main: #000000;
+        --border-color: #dcdcdc;
+        --footer-bg: #e0e0e0;
+        --active-q-bg: #333;
+        --active-q-text: #fff;
+        --instruction-bg: #fdfdfd;
+        --instruction-border: #888;
+    }
+
+    /* THEMES */
+    body.theme-dark {
+        --header-bg: #1a1a1a; --header-text: #fff; --bg-app: #333; --bg-paper: #000;
+        --text-main: #ccc; --border-color: #555; --footer-bg: #222;
+        --active-q-bg: #ccc; --active-q-text: #000; --instruction-bg: #222; --instruction-border: #777;
+    }
+    body.theme-yellow {
+        --header-bg: #000; --header-text: #ff0; --bg-app: #111; --bg-paper: #000;
+        --text-main: #ff0; --border-color: #ff0; --footer-bg: #111;
+        --active-q-bg: #ff0; --active-q-text: #000; --instruction-bg: #111; --instruction-border: #ff0;
+    }
+
+    /* SIZES */
+    body.text-reg { --base-size: 14px; }
+    body.text-med { --base-size: 16px; }
+    body.text-lg { --base-size: 18px; }
+    body.text-xl { --base-size: 22px; }
+
+    * { box-sizing: border-box; }
+
+    body {
+        margin: 0; padding: 0;
+        font-family: 'Verdana', sans-serif;
+        height: 100vh;
+        display: flex; flex-direction: column;
+        background-color: var(--bg-app);
+        color: var(--text-main);
+        overflow: hidden;
+        font-size: var(--base-size);
+    }
+
+    /* --- HEADER --- */
+    .top-bar {
+        background-color: var(--header-bg);
+        color: var(--header-text);
+        height: 60px;
+        display: flex; align-items: center; justify-content: space-between;
+        padding: 0 20px; flex-shrink: 0;
+        border-bottom: 1px solid var(--border-color);
+        position: relative;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    .top-left { font-weight: bold; font-size: 1.1em; }
+    
+    .timer-group {
+        position: absolute; left: 50%; transform: translateX(-50%);
+        display: flex; align-items: center; gap: 15px;
+    }
+    .timer { font-size: 1.4em; font-weight: bold; color: #d32f2f; font-family: monospace; }
+    
+    .telegram-link {
+        text-decoration: none; color: #0088cc; font-size: 0.9em;
+        display: flex; align-items: center; gap: 5px;
+        background: rgba(0, 136, 204, 0.1); padding: 4px 10px; border-radius: 15px;
+        transition: background 0.2s;
+    }
+    .telegram-link:hover { background: rgba(0, 136, 204, 0.2); }
+
+    /* Settings Menu */
+    .settings-menu {
+        position: absolute; top: 60px; right: 10px;
+        background: var(--header-bg); border: 1px solid var(--border-color);
+        padding: 15px; border-radius: 4px; display: none;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.2); z-index: 1000; width: 220px;
+        color: var(--header-text);
+    }
+    .s-btn { 
+        display: block; width: 100%; padding: 8px 10px; cursor: pointer; font-size: 13px; 
+        border: 1px solid var(--border-color); background: var(--bg-paper); 
+        color: var(--text-main); margin-bottom: 6px; text-align: left; border-radius: 3px;
+    }
+    .s-btn:hover { background: var(--border-color); }
+
+    /* --- INSTRUCTION BANNER --- */
+    .instruction-banner {
+        background-color: #f0f0f0; padding: 8px 20px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.95em; color: #333; flex-shrink: 0;
+    }
+    body.theme-dark .instruction-banner { background-color: #333; color: #fff; }
+    body.theme-yellow .instruction-banner { background-color: #222; color: #ff0; border-color: #ff0; }
+
+    /* --- MAIN LAYOUT --- */
+    .main-container { display: flex; flex: 1; overflow: hidden; background-color: var(--bg-paper); position: relative; }
+    .passage-pane, .question-pane { padding: 30px; overflow-y: auto; line-height: 1.7; outline: none; height: 100%; }
+    .passage-pane { width: 50%; border-right: 2px solid var(--border-color); font-family: 'Times New Roman', Times, serif; font-size: 1.1em; }
+    .question-pane { flex: 1; font-family: 'Verdana', sans-serif; }
+    .passage-content, .question-content { display: none; }
+    .passage-content.active, .question-content.active { display: block; }
+    
+    .passage-pane h2 { font-size: 1.5em; margin-bottom: 25px; font-weight: bold; color: var(--text-main); text-transform: uppercase; }
+    .passage-pane p { margin-bottom: 15px; text-align: justify; }
+    .paragraph-label { font-weight: bold; margin-right: 10px; font-size: 1.1em; float: left; }
+    
+    .divider { width: 8px; background: #f0f0f0; cursor: col-resize; border-left: 1px solid #ddd; border-right: 1px solid #ddd; z-index: 10; }
+    body.theme-dark .divider { background: #444; border-color: #555; }
+    body.theme-yellow .divider { background: #222; border-color: #ff0; }
+
+    /* --- INSTRUCTION BOXES & LISTS --- */
+    .instruction-box { border: 1px solid var(--instruction-border); background-color: var(--instruction-bg); padding: 15px; margin-bottom: 25px; font-size: 0.9em; }
+    .instruction-box h3 { margin: 0 0 5px 0; font-size: 1em; text-transform: uppercase; }
+    .instruction-box p { margin: 5px 0 0 0; }
+    
+    .q-item-block { margin-bottom: 20px; transition: background-color 0.3s; }
+    .q-num-plain { display: inline-block; min-width: 20px; font-weight: bold; margin-right: 5px; color: var(--text-main); flex-shrink: 0;}
+    
+    .gap-input { 
+        text-align: center; font-weight: bold; 
+        border-bottom: 2px solid #333; border-top:none; border-left:none; border-right:none; 
+        background: transparent; color: var(--text-main); font-size: inherit; margin: 0 5px;
+    }
+    .gap-input.long { width: 200px; }
+    .gap-input.short { width: 50px; }
+    .gap-input:focus { outline: none; border-bottom: 2px solid #0088cc; }
+    .gap-input.correct { color: green !important; border-bottom-color: green !important; }
+    .gap-input.incorrect { color: red !important; border-bottom-color: red !important; }
+    body.theme-dark .gap-input { border-bottom-color: #ccc; }
+    body.theme-yellow .gap-input { border-bottom-color: #ff0; }
+
+    /* --- MATRIX TABLE STYLES (Computer-delivered IELTS format) --- */
+    .matrix-table { width: 100%; border-collapse: collapse; margin-bottom: 25px; background: var(--header-bg); }
+    .matrix-table th { padding: 10px; border: 1px solid var(--border-color); text-align: center; background: #e9e9e9; color: #333; font-weight: bold; }
+    .matrix-table td { padding: 10px; border: 1px solid var(--border-color); text-align: center; vertical-align: middle; transition: background-color 0.3s; }
+    .matrix-table td.m-text { text-align: left; }
+    .matrix-table td.m-qnum { font-weight: bold; width: 30px; }
+    .matrix-table input[type="radio"] { transform: scale(1.3); cursor: pointer; margin: 0; }
+    
+    body.theme-dark .matrix-table th { background: #444; color: #fff; border-color: #555; }
+    body.theme-yellow .matrix-table th { background: #333; color: #ff0; border-color: #ff0; }
+
+    .tf-options { 
+        margin-left: 25px; 
+        margin-top: 10px; 
+        display: flex; 
+        flex-direction: column; 
+        gap: 8px; 
+    }
+    .tf-options label { 
+        padding: 4px 8px; 
+        border-radius: 4px; 
+        transition: background-color 0.2s; 
+        cursor: pointer; 
+        width: fit-content; 
+    }
+    .tf-options input[type="radio"], .tf-options input[type="checkbox"] { 
+        transform: scale(1.2); 
+        margin-right: 8px; 
+        cursor: pointer; 
+    }
+
+    .cell-correct { background-color: rgba(0, 200, 0, 0.2) !important; }
+    .cell-incorrect { background-color: rgba(255, 0, 0, 0.2) !important; }
+
+    .summary-text { line-height: 2.2; }
+    
+    /* --- FOOTER --- */
+    .footer-bar { height: 60px; background-color: var(--footer-bg); border-top: 1px solid var(--border-color); display: flex; align-items: stretch; padding: 0; flex-shrink: 0; }
+    .footer-parts-container { display: flex; flex: 1; width: 100%; }
+    .footer-part-item { flex: 1; display: flex; flex-direction: column; justify-content: center; padding: 0 20px; cursor: pointer; border-right: 1px solid #ccc; transition: background 0.2s; }
+    body.theme-dark .footer-part-item { border-right-color: #555; }
+    body.theme-yellow .footer-part-item { border-right-color: #ff0; }
+    .footer-part-item:hover { background-color: rgba(0,0,0,0.05); }
+    body.theme-dark .footer-part-item:hover { background-color: rgba(255,255,255,0.1); }
+    body.theme-yellow .footer-part-item:hover { background-color: #222; }
+    
+    .part-content-wrapper { display: flex; align-items: center; justify-content: space-between; gap: 15px; width: 100%; }
+    .p-label { font-weight: bold; font-size: 15px; color: var(--text-main); white-space: nowrap; }
+    .p-count { font-weight: bold; font-size: 13px; color: #0088cc; white-space: nowrap; } 
+    body.theme-dark .p-count { color: #44ccff; }
+    body.theme-yellow .p-count { color: #ff0; }
+
+    .q-numbers-list { display: flex; gap: 4px; flex-wrap: nowrap; overflow-x: auto; margin-top: 4px; padding-bottom: 2px; }
+    .q-btn { width: 26px; height: 26px; display: flex; align-items: center; justify-content: center; border: 1px solid #999; cursor: pointer; color: #333; background: #fff; border-radius: 2px; font-size: 12px; flex-shrink: 0; }
+    .q-btn:hover { background: #ccc; }
+    .q-btn.answered { background-color: var(--active-q-bg); color: var(--active-q-text); border-color: var(--text-main); font-weight: bold; }
+
+    .submit-container { width: 60px; background: #ccc; display: flex; align-items: center; justify-content: center; cursor: pointer; border-left: 1px solid #999; }
+    .submit-container:hover { background: #bbb; }
+    .submit-icon { font-size: 20px; color: #333; }
+    body.theme-dark .submit-container { background: #444; border-left-color: #555; }
+    body.theme-dark .submit-icon { color: #fff; }
+    body.theme-yellow .submit-container { background: #333; border-left-color: #ff0; }
+    body.theme-yellow .submit-icon { color: #ff0; }
+
+    /* --- HIGHLIGHTER --- */
+    #highlightMenu { position: absolute; display: none; background: #fff; padding: 5px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 9999; }
+    .hl-color { width: 24px; height: 24px; display: inline-block; margin: 0 4px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; }
+
+    /* --- MODAL --- */
+    .modal-overlay { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.8); z-index: 10000; display: none; align-items: center; justify-content: center; }
+    .modal-content { background: #fff; width: 85%; max-width: 900px; height: 85%; border-radius: 4px; display: flex; flex-direction: column; color: #000; padding: 20px; }
+    .modal-header { display: flex; justify-content: space-between; border-bottom: 2px solid #ccc; padding-bottom: 10px; margin-bottom: 20px; }
+    .modal-body { flex: 1; overflow-y: auto; }
+    .result-table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+    .result-table th, .result-table td { padding: 10px; border: 1px solid #ddd; text-align: left; }
+    .result-table tbody tr:hover { background-color: rgba(0,0,0,0.05); }
+    body.theme-dark .result-table tbody tr:hover { background-color: rgba(255,255,255,0.1); }
+    body.theme-yellow .result-table tbody tr:hover { background-color: rgba(255,255,0,0.2); }
+    .status-correct { color: green; font-weight: bold; }
+    .status-incorrect { color: red; font-weight: bold; }
+</style>
+</head>
+<body class="theme-standard text-reg">
+
+    <div class="top-bar">
+        <div class="top-left">IELTS Reading test simulator</div>
+        <div class="timer-group">
+            <div class="timer" id="timer">00:00</div>
+            <a href="https://t.me/khamidovs_ielts" target="_blank" class="telegram-link"><i class="fab fa-telegram-plane"></i> @khamidovs_ielts</a>
+        </div>
+        <div style="font-size:18px; cursor:pointer; padding:5px;" onclick="toggleSettings()"><i class="fas fa-bars"></i></div>
+        <div class="settings-menu" id="settingsMenu">
+            <h4 style="margin:0 0 10px 0; border-bottom: 1px solid var(--border-color); padding-bottom:5px;">Settings</h4>
+            <div style="margin-bottom:15px;">
+                <div style="font-weight:bold; margin-bottom:5px;">Text Size</div>
+                <div style="display:flex; flex-direction:column;">
+                    <button class="s-btn" onclick="setSize('text-reg')">Standard</button>
+                    <button class="s-btn" onclick="setSize('text-med')">Medium</button>
+                    <button class="s-btn" onclick="setSize('text-lg')">Large</button>
+                    <button class="s-btn" onclick="setSize('text-xl')">Extra Large</button>
+                </div>
+            </div>
+            <div>
+                <div style="font-weight:bold; margin-bottom:5px;">Color Mode</div>
+                <div style="display:flex; flex-direction:column;">
+                    <button class="s-btn" onclick="setTheme('theme-standard')">Standard</button>
+                    <button class="s-btn" onclick="setTheme('theme-dark')">White on Black</button>
+                    <button class="s-btn" onclick="setTheme('theme-yellow')">Yellow on Black</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="instruction-banner" id="topInstruction">You should spend 20 minutes on Questions 1-13, which are based on Reading Passage 2.</div>
+
+    <div class="main-container">
+        <!-- PASSAGE PANE -->
+        <div class="passage-pane" id="passagePane">
+            <div id="p-content-1" class="passage-content active">
+                <h2>Australian Aboriginal Astronomy</h2>
+                <p><em>Research is revealing a complex and functional astronomical knowledge used by Aboriginal people, Australia's indigenous people, to navigate, find food and mark seasonal changes.</em></p>
+
+                <p><span class="paragraph-label">A</span> Australia's Aboriginal people, living under a dazzling canopy of constellations, absorbed the night skies into their cultural, social and spiritual life. The position of the stars, the motion of the planets, and astronomical events such as comets, meteorites and eclipses have informed their cosmology and traditions. “Spirituality, sacred law, kinship, cultural rules about who you can marry, where you can go, what you can do, how society works…all of this social structure is written in the stars”, says Dr Duane Hamacher, a lecturer at the Nura Gilli Indigenous Programs Unit at the University of New South Wales, Australia.</p>
+
+                <p><span class="paragraph-label">B</span> Hamacher, working closely with Aboriginal elders, is uncovering a wealth of astronomical knowledge. He takes the example of the Pleiades, one of the closest star clusters to Earth. He explains that the Pleiades rise early in the morning, just before the sun comes up, and are visible for about 15 minutes. This signals the time at which flowers appear on one type of tree, the start of winter, and the orca* migrating north. These observations indicate that the early Aboriginal astronomers took an intellectual approach that sought meaning in, and application of, astronomical phenomena. And no more is this evidenced than in how they used this knowledge to navigate their vast, and sometimes featureless, island continent.</p>
+
+                <p><span class="paragraph-label">C</span> Professor Ray Norris, an astrophysicist at the Australian Telescope National Facility and adjunct professor in Indigenous Astronomy at Macquarie University, Sydney, recounts an occasion while bushwalking with Bill Yidumduma Harney, an Aboriginal elder: ‘Bill can name about 5000 stars. Most Western astronomers can name only 20 or 30 on a good day …He looks up at the sky and knows how it charges with the seasons, with the time, in ways I don’t actually quite understand. And for him it’s completely intuitive …. he looks at the sky and knows it reflects what’s on the land.</p>
+                <p>William Stevens, an Aboriginal astronomy guide who conducts the Dreamtime ** Astronomy tour at Sydney Observatory, explains how some Aboriginal people use the constellation of Scorpius for navigation: ‘We don’t see a scorpion ; it’s actually a map for us, says Stevens, adding that people use the stars to travel from one clan group to another.</p>
+
+                <p><span class="paragraph-label">D</span> Norris considers the study of Aboriginal astronomy an opportunity for Aboriginal communities to gain access to information that may have been lost after European colonization of Australia. This giving back of knowledge as Norris describes it ,’could promote community pride and provide educational material for young Aboriginal people,. This could also provide an opportunity to help foster a better understanding and appreciation as Aboriginal culture among the wider Australian society.</p>
+
+                <p><span class="paragraph-label">E</span> Perhaps the most beguiling application of astronomical observation is associated with the behavior of one Australia’s most iconic birds, the emu. ‘The Emu in the Sky’, as it is called, describes a carving that is clearly visible on a rock located in Ku-ring-gai Chase National Park, north of Sydney. It depicts an emu is somewhat unnatural position for a real emu, with the legs folded behind it. That is, until it is observed that there is a huge and dark shape in one of the ‘dark’ areas of the Milky Way that resembles an emu. This ‘emu’ swings around the sky each night, its starting point at dusk changing as the year goes by and the season change. In April the body of the ‘Emu in the Sky’ reaches a certain angle, and people know it is the season to go and find fresh emu eggs, a rich highly valued food source. When the angle of the representation of the emu on the rock face matches the ‘Emu in the Sky’, the harvest might begin. The folded legs signify that the emu is sitting on the nest.</p>
+                <p>The Emu in the sky exemplifies one of the key principles of Aboriginal cultures: what is in the sky is of what is on Earth. Aboriginal people also apply this concept to construct annual calendars. Often based on six seasons, Aboriginal calendars are relatively complex and are generally constructed from the heliacal rising of stars (i.e when the star first becomes visible above eastern horizon for a brief moment just before sunrise)</p>
+
+                <p><span class="paragraph-label">F</span> Dr Philip Clarke of federation University Australia has documented how the Kaurna Aboriginal people of South Australia use the rising of they call Parna, one of the brightest stars in the night sky. Its appearance just before sunrise indicates that the hot, dry summer is ending and the autumn rains will soon arrive. The lands of Kaurna include the ADELAIDE Plains, which are prone to flooding. Therefore, knowledge of when the arrival of autumn is imminent allows them time to build their large, waterproof huts, which are known as wurlies.</p>
+                <p>Not only were the positions and movements of individual stars used to predict seasonal changes, the scintillation of stars also informs Aboriginal astronomers of a change in the weather or season.” They can tell by the degree of how much the star twinkles or changes colour to gauge the amount of moisture in the atmosphere”, explains Hamacher. “They then know whether a storm is approaching or the wet season is coming”.</p>
+
+                <p><span class="paragraph-label">G</span> It is clear that aboriginal cultures contain a wealth of astronomical knowledge. This knowledge incorporates a deep and sophisticated understanding celestial and terrestrial events and should be viewed through the prism of an interconnected world-view: a paradigm in which the Aboriginal people saw themselves not a separate external observer, but integral component of nature and the universe.</p>
+
+                <div style="font-size: 0.9em; margin-top: 30px; padding-top: 10px; border-top: 1px solid #ccc;">
+                    <em>* orca – a type of whale</em><br>
+                    <em>** Dreamtime – the time of the creation of Earth, the sun and stars according to Australian Aboriginal people</em><br>
+                    <em>*** scintillation - twinkling</em>
+                </div>
+            </div>
+        </div>
+
+        <div class="divider" id="divider"></div>
+
+        <div class="question-pane" id="questionPane">
+            <div id="q-content-1" class="question-content active">
+                
+                <div class="instruction-box">
+                    <h3>Questions 1 - 5</h3>
+                    <p>Reading Passage 2 has seven sections, <strong>A-G</strong>.</p>
+                    <p>Which section contains the following information?</p>
+                    <p>Write the correct letter, <strong>A-G</strong>, in boxes 1-5 on your answer sheet.</p>
+                    <p><em><strong>NB</strong> You may use any letter more than once.</em></p>
+                </div>
+                
+                <!-- Matrix Table for Q1-5 -->
+                <table class="matrix-table">
+                    <thead>
+                        <tr>
+                            <th></th>
+                            <th></th>
+                            <th>A</th><th>B</th><th>C</th><th>D</th><th>E</th><th>F</th><th>G</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="m-qnum">1</td>
+                            <td class="m-text">an example of am Aboriginal person who can identify many stars in the sky</td>
+                            <td><input type="radio" name="q1" value="A" onchange="updateAnswerStatus(1)"></td>
+                            <td><input type="radio" name="q1" value="B" onchange="updateAnswerStatus(1)"></td>
+                            <td><input type="radio" name="q1" value="C" onchange="updateAnswerStatus(1)"></td>
+                            <td><input type="radio" name="q1" value="D" onchange="updateAnswerStatus(1)"></td>
+                            <td><input type="radio" name="q1" value="E" onchange="updateAnswerStatus(1)"></td>
+                            <td><input type="radio" name="q1" value="F" onchange="updateAnswerStatus(1)"></td>
+                            <td><input type="radio" name="q1" value="G" onchange="updateAnswerStatus(1)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">2</td>
+                            <td class="m-text">a reference of an astronomical feature that predicts the movement of a particular animal</td>
+                            <td><input type="radio" name="q2" value="A" onchange="updateAnswerStatus(2)"></td>
+                            <td><input type="radio" name="q2" value="B" onchange="updateAnswerStatus(2)"></td>
+                            <td><input type="radio" name="q2" value="C" onchange="updateAnswerStatus(2)"></td>
+                            <td><input type="radio" name="q2" value="D" onchange="updateAnswerStatus(2)"></td>
+                            <td><input type="radio" name="q2" value="E" onchange="updateAnswerStatus(2)"></td>
+                            <td><input type="radio" name="q2" value="F" onchange="updateAnswerStatus(2)"></td>
+                            <td><input type="radio" name="q2" value="G" onchange="updateAnswerStatus(2)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">3</td>
+                            <td class="m-text">a mention of an Aboriginal system of dividing the year into several periods</td>
+                            <td><input type="radio" name="q3" value="A" onchange="updateAnswerStatus(3)"></td>
+                            <td><input type="radio" name="q3" value="B" onchange="updateAnswerStatus(3)"></td>
+                            <td><input type="radio" name="q3" value="C" onchange="updateAnswerStatus(3)"></td>
+                            <td><input type="radio" name="q3" value="D" onchange="updateAnswerStatus(3)"></td>
+                            <td><input type="radio" name="q3" value="E" onchange="updateAnswerStatus(3)"></td>
+                            <td><input type="radio" name="q3" value="F" onchange="updateAnswerStatus(3)"></td>
+                            <td><input type="radio" name="q3" value="G" onchange="updateAnswerStatus(3)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">4</td>
+                            <td class="m-text">an explanation of how the Aboriginal people viewed themselves as part of the environment</td>
+                            <td><input type="radio" name="q4" value="A" onchange="updateAnswerStatus(4)"></td>
+                            <td><input type="radio" name="q4" value="B" onchange="updateAnswerStatus(4)"></td>
+                            <td><input type="radio" name="q4" value="C" onchange="updateAnswerStatus(4)"></td>
+                            <td><input type="radio" name="q4" value="D" onchange="updateAnswerStatus(4)"></td>
+                            <td><input type="radio" name="q4" value="E" onchange="updateAnswerStatus(4)"></td>
+                            <td><input type="radio" name="q4" value="F" onchange="updateAnswerStatus(4)"></td>
+                            <td><input type="radio" name="q4" value="G" onchange="updateAnswerStatus(4)"></td>
+                        </tr>
+                        <tr>
+                            <td class="m-qnum">5</td>
+                            <td class="m-text">a reference to a chance for greater public insight into Aboriginal ways</td>
+                            <td><input type="radio" name="q5" value="A" onchange="updateAnswerStatus(5)"></td>
+                            <td><input type="radio" name="q5" value="B" onchange="updateAnswerStatus(5)"></td>
+                            <td><input type="radio" name="q5" value="C" onchange="updateAnswerStatus(5)"></td>
+                            <td><input type="radio" name="q5" value="D" onchange="updateAnswerStatus(5)"></td>
+                            <td><input type="radio" name="q5" value="E" onchange="updateAnswerStatus(5)"></td>
+                            <td><input type="radio" name="q5" value="F" onchange="updateAnswerStatus(5)"></td>
+                            <td><input type="radio" name="q5" value="G" onchange="updateAnswerStatus(5)"></td>
+                        </tr>
+                    </tbody>
+                </table>
+
+                <div class="instruction-box" style="margin-top: 35px;">
+                    <h3>Questions 6 - 10</h3>
+                    <p>Look at the following statements (Questions 6-10) and the list of people below.</p>
+                    <p>Match each statement with the correct person, <strong>A, B, C or D</strong>.</p>
+                    <p>Write the correct letter, <strong>A, B, C or D</strong>, in boxes 6-10 on your answer sheet.</p>
+                    <p><em><strong>NB</strong> You may use any letter more than once.</em></p>
+                </div>
+
+                <div style="border: 1px solid var(--border-color); padding: 15px; margin-bottom: 20px; background: var(--header-bg);">
+                    <h4 style="margin-top: 0; margin-bottom: 10px;">List of people</h4>
+                    <ul style="list-style-type: none; padding-left: 0; line-height: 1.8; margin-bottom: 0;">
+                        <li><strong>A</strong> Dr Duane Hamacher</li>
+                        <li><strong>B</strong> Professor Ray Norris</li>
+                        <li><strong>C</strong> William Stevens</li>
+                        <li><strong>D</strong> Dr Philip Clarke</li>
+                    </ul>
+                </div>
+
+                <div class="q-item-block" style="line-height: 2.2;">
+                    <div style="margin-bottom: 15px; display: flex; align-items: baseline;">
+                        <span class="q-num-plain">6</span> 
+                        <span style="flex: 1;">The way a star shines gives information about the weather</span>
+                        <input type="text" id="q6" class="gap-input short" maxlength="1" oninput="updateAnswerStatus(6)">
+                    </div>
+                    <div style="margin-bottom: 15px; display: flex; align-items: baseline;">
+                        <span class="q-num-plain">7</span> 
+                        <span style="flex: 1;">An aboriginal person makes an instinctive connection between earth and sky.</span>
+                        <input type="text" id="q7" class="gap-input short" maxlength="1" oninput="updateAnswerStatus(7)">
+                    </div>
+                    <div style="margin-bottom: 15px; display: flex; align-items: baseline;">
+                        <span class="q-num-plain">8</span> 
+                        <span style="flex: 1;">Astronomy provides a guide for Aboriginals about the suitability of partners</span>
+                        <input type="text" id="q8" class="gap-input short" maxlength="1" oninput="updateAnswerStatus(8)">
+                    </div>
+                    <div style="margin-bottom: 15px; display: flex; align-items: baseline;">
+                        <span class="q-num-plain">9</span> 
+                        <span style="flex: 1;">Astronomy helps aboriginal people make practical preparations for a change in the weather</span>
+                        <input type="text" id="q9" class="gap-input short" maxlength="1" oninput="updateAnswerStatus(9)">
+                    </div>
+                    <div style="margin-bottom: 15px; display: flex; align-items: baseline;">
+                        <span class="q-num-plain">10</span> 
+                        <span style="flex: 1;">Current research may help aboriginal people today learn about what their ancestors knew.</span>
+                        <input type="text" id="q10" class="gap-input short" maxlength="1" oninput="updateAnswerStatus(10)">
+                    </div>
+                </div>
+
+                <div class="instruction-box" style="margin-top: 35px;">
+                    <h3>Questions 11 - 13</h3>
+                    <p>Complete the summary below.</p>
+                    <p>Choose <strong>ONE WORD ONLY</strong> from the passage for each answer.</p>
+                    <p>Write your answers in boxes 11-13 on your answer sheet.</p>
+                </div>
+                
+                <div class="q-item-block summary-text">
+                    <h3 style="margin-bottom: 10px; text-align: center;">The Emu in the Sky</h3>
+                    <p style="text-align: justify;">
+                        ‘The Emu in the Sky’ is a <span class="q-num-plain">11</span> <input type="text" id="q11" class="gap-input long" oninput="updateAnswerStatus(11)"> on a rock in Ku-ring-gai Chase National Park. This portrays an emu that appears to be sitting in odd way as its <span class="q-num-plain">12</span> <input type="text" id="q12" class="gap-input long" oninput="updateAnswerStatus(12)"> are in an unusual position. However, when <span class="q-num-plain">13</span> <input type="text" id="q13" class="gap-input long" oninput="updateAnswerStatus(13)"> comes, and emus lay their eggs, the rock art matches the shape of one of the dark areas in the Milky Way. Then it becomes clear that the rock art represents an emu on a nest and that the Aboriginal people see the sky as reflecting life on the land.
+                    </p>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div class="footer-bar" id="footerBar">
+        <!-- Footer Nav injected via JS -->
+    </div>
+
+    <!-- Highlight Menu -->
+    <div id="highlightMenu">
+        <span class="hl-color" style="background:#ffff00" onmousedown="applyHighlight('yellow', event)"></span>
+        <span class="hl-color" style="background:#44ff44" onmousedown="applyHighlight('#44ff44', event)"></span>
+        <span class="hl-color" style="background:#44ccff" onmousedown="applyHighlight('#44ccff', event)"></span>
+        <span class="hl-color" style="background:#fff; color:#333; text-align:center; line-height:22px; font-weight:bold; font-size:12px; border: 1px solid #ccc;" onmousedown="applyHighlight('remove', event)">X</span>
+    </div>
+
+    <!-- Results Modal -->
+    <div class="modal-overlay" id="resultsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 style="margin: 0;">Test Results</h2>
+                <button onclick="document.getElementById('resultsModal').style.display='none'" style="background:none; border:none; color:#fff; font-size:24px; cursor:pointer;">&times;</button>
+            </div>
+            <div class="modal-body">
+                <h1 style="text-align:center; margin-top: 0;" id="finalScore"></h1>
+                <table class="result-table">
+                    <thead><tr><th>Q</th><th>Your Answer</th><th>Correct Answer</th><th>Status</th></tr></thead>
+                    <tbody id="resultsBody"></tbody>
+                </table>
+            </div>
+            <div style="padding: 20px; text-align:center; border-top: 1px solid #ddd;">
+                <button onclick="document.getElementById('resultsModal').style.display='none'" style="padding:10px 20px; cursor:pointer; font-size: 16px; background: #000; color: #fff; border: none; border-radius: 4px;">Review Mistakes</button>
+            </div>
+        </div>
+    </div>
+
+<script>
+    // --- TIMER LOGIC (Stopwatch - Counts Up) ---
+    let time = 0; 
+    const timerInterval = setInterval(() => {
+        time++;
+        const m = Math.floor(time / 60).toString().padStart(2, '0');
+        const s = (time % 60).toString().padStart(2, '0');
+        const el = document.getElementById('timer');
+        if(el) el.innerText = `${m}:${s}`;
+    }, 1000);
+
+    const partsConfig = {
+        1: { start: 1, end: 13, instr: "You should spend 20 minutes on Questions 1-13, which are based on Reading Passage 2." }
+    };
+    let currentPart = 1;
+
+    // ANSWER KEY
+    const answers = { 
+        1:'C', 
+        2:'B', 
+        3:'E', 
+        4:'G', 
+        5:'D', 
+        6:'A', 
+        7:'B', 
+        8:'A', 
+        9:'D', 
+        10:'B', 
+        11:'CARVING', 
+        12:'LEGS', 
+        13:'APRIL'
+    };
+
+    function init() {
+        renderFooter();
+        
+        const divider = document.getElementById('divider');
+        const pPane = document.getElementById('passagePane');
+        let isDrag = false;
+        if(divider && pPane) {
+            divider.addEventListener('mousedown', (e) => { isDrag = true; e.preventDefault(); });
+            document.addEventListener('mouseup', () => isDrag = false);
+            document.addEventListener('mousemove', (e) => {
+                if(isDrag) {
+                    let pct = (e.clientX / window.innerWidth) * 100;
+                    if(pct > 20 && pct < 80) pPane.style.width = pct + '%';
+                }
+            });
+        }
+        
+        setupHighlighter();
+    }
+
+    function setPart(p) {
+        currentPart = p;
+        document.querySelectorAll('.passage-content').forEach(el => el.classList.remove('active'));
+        document.querySelectorAll('.question-content').forEach(el => el.classList.remove('active'));
+        const pContent = document.getElementById(`p-content-${p}`);
+        const qContent = document.getElementById(`q-content-${p}`);
+        if(pContent) pContent.classList.add('active');
+        if(qContent) qContent.classList.add('active');
+        
+        const pPane = document.getElementById('passagePane');
+        const qPane = document.getElementById('questionPane');
+        if(pPane) pPane.scrollTop = 0;
+        if(qPane) qPane.scrollTop = 0;
+        
+        document.getElementById('topInstruction').innerText = partsConfig[p].instr;
+        renderFooter();
+    }
+
+    // --- IMMEDIATE UPDATE LOGIC ---
+    function updateAnswerStatus(q) {
+        const btn = document.getElementById(`btn-q${q}`);
+        if(isAnswered(q)) {
+            if(btn) btn.classList.add('answered');
+        } else {
+            if(btn) btn.classList.remove('answered');
+        }
+        updateProgressCount();
+    }
+
+    function updateProgressCount() {
+        for(let p=1; p<=1; p++) { 
+            const range = partsConfig[1];
+            const total = range.end - range.start + 1;
+            const answeredCount = countAnswered(range.start, range.end);
+            const countEl = document.getElementById(`p-count-1`);
+            if (countEl) countEl.innerText = `${answeredCount} of ${total}`;
+        }
+    }
+
+    function renderFooter() {
+        const footer = document.getElementById('footerBar');
+        if(!footer) return;
+        footer.innerHTML = ''; 
+
+        const partsContainer = document.createElement('div');
+        partsContainer.className = 'footer-parts-container';
+
+        const range = partsConfig[1];
+        const total = range.end - range.start + 1;
+        const answeredCount = countAnswered(range.start, range.end);
+
+        const partItem = document.createElement('div');
+        partItem.className = 'footer-part-item';
+        partItem.onclick = () => setPart(1);
+
+        const contentWrapper = document.createElement('div');
+        contentWrapper.className = 'part-content-wrapper';
+
+        const label = document.createElement('span');
+        label.className = 'p-label';
+        label.innerText = `Questions ${range.start}-${range.end}`;
+        contentWrapper.appendChild(label);
+
+        const list = document.createElement('div');
+        list.className = 'q-numbers-list';
+        for(let q = range.start; q <= range.end; q++) {
+            const btn = document.createElement('div');
+            btn.className = 'q-btn';
+            btn.innerText = q;
+
+            btn.id = `btn-q${q}`;
+            if(isAnswered(q)) btn.classList.add('answered');
+            btn.onclick = (e) => { e.stopPropagation(); scrollToQ(q); };
+            list.appendChild(btn);
+        }
+        contentWrapper.appendChild(list);
+        
+        const count = document.createElement('span');
+        count.className = 'p-count';
+        count.id = `p-count-1`;
+        count.innerText = `${answeredCount} of ${total}`;
+        contentWrapper.appendChild(count);
+
+        partItem.appendChild(contentWrapper);
+        partsContainer.appendChild(partItem);
+        
+        footer.appendChild(partsContainer);
+
+        const subContainer = document.createElement('div');
+        subContainer.className = 'submit-container';
+        subContainer.onclick = submitTest;
+        subContainer.innerHTML = '<i class="fas fa-check submit-icon"></i>';
+        footer.appendChild(subContainer);
+    }
+
+    function scrollToQ(q) {
+        let targetId = `q${q}`;
+
+        const el = document.getElementById(targetId);
+        if(el) {
+            el.scrollIntoView({behavior:'smooth', block:'center'});
+        } else {
+             let inp = document.getElementById(`q${q}_in`) || document.querySelector(`input[name="q${q}"]`);
+             if(!inp) { 
+                 const slot = document.querySelector(`.drop-slot[data-q="${q}"]`);
+                 if(slot) {
+                    slot.scrollIntoView({behavior:'smooth', block:'center'});
+                    return;
+                 }
+                 const sel = document.getElementById(`q${q}`);
+                 if (sel) {
+                    sel.scrollIntoView({behavior:'smooth', block:'center'});
+                    return;
+                 }
+                 return;
+             }
+             if(inp) inp.closest('tr, .q-item, .instruction-box, td, .q-item-block, .tf-question, .tf-options').scrollIntoView({behavior:'smooth', block:'center'});
+        }
+    }
+
+    function jumpToQ(q) {
+        document.getElementById('resultsModal').style.display = 'none';
+        
+        setTimeout(() => {
+            scrollToQ(q);
+            let el = null;
+            let targetId = `q${q}`;
+            el = document.getElementById(targetId) || document.getElementById(`q${q}_in`) || document.querySelector(`input[name="q${q}"]`);
+            if(!el) {
+                const slot = document.querySelector(`.drop-slot[data-q="${q}"]`);
+                if(slot) el = slot;
+                
+                const sel = document.getElementById(`q${q}`);
+                if (sel && !el) el = sel;
+            }
+            
+            if(el) {
+                let container = el.closest('tr, .q-item-block, .q-item, .instruction-box, td, p, li, .summary-text, div.tf-question, .tf-options');
+                if(container) {
+                    let origBg = container.style.backgroundColor;
+                    container.style.backgroundColor = 'rgba(0, 136, 204, 0.2)';
+                    setTimeout(() => { container.style.backgroundColor = origBg; }, 1500);
+                } 
+            }
+        }, 100);
+    }
+
+    function isAnswered(q) {
+        const gap = document.getElementById(`q${q}`);
+        if(gap && gap.tagName === 'INPUT' && gap.value.trim() !== "") return true;
+
+        const radios = document.querySelectorAll(`input[name="q${q}"]:checked`);
+        if(radios.length > 0) return true;
+
+        return false;
+    }
+
+    function countAnswered(start, end) {
+        let c = 0;
+        for(let i=start; i<=end; i++) {
+           if(isAnswered(i)) c++;
+        }
+        return c;
+    }
+
+    function toggleSettings() {
+        const m = document.getElementById('settingsMenu');
+        if(m) m.style.display = (m.style.display === 'block') ? 'none' : 'block';
+    }
+    function setSize(c) {
+        document.body.classList.remove('text-reg','text-med','text-lg','text-xl');
+        document.body.classList.add(c);
+        toggleSettings();
+    }
+    function setTheme(c) {
+        document.body.classList.remove('theme-standard','theme-dark','theme-yellow');
+        document.body.classList.add(c);
+        toggleSettings();
+    }
+
+    function setupHighlighter() {
+        const hMenu = document.getElementById('highlightMenu');
+        let savedRange = null;
+        document.addEventListener('mouseup', (e) => {
+            if(e.target.closest('#highlightMenu') || e.target.closest('.settings-menu')) return;
+            const sel = window.getSelection();
+            if(sel.rangeCount > 0 && sel.toString().length > 0) {
+                const node = sel.anchorNode;
+                if(node && node.parentElement && (node.parentElement.closest('.passage-pane') || node.parentElement.closest('.question-pane'))) {
+                    savedRange = sel.getRangeAt(0).cloneRange();
+                    hMenu.style.display = 'block';
+                    hMenu.style.left = e.pageX + 'px';
+                    hMenu.style.top = (e.pageY - 40) + 'px';
+                    return;
+                }
+            }
+            if(hMenu) hMenu.style.display = 'none';
+        });
+        window.applyHighlight = function(c, e) {
+            e.preventDefault(); e.stopPropagation();
+            if(!savedRange) return;
+            const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange);
+            document.designMode = 'on';
+            if(c==='remove') { document.execCommand('removeFormat',false,null); document.execCommand('backColor',false,'transparent'); }
+            else { document.execCommand('backColor',false,c); }
+            document.designMode = 'off'; sel.removeAllRanges(); hMenu.style.display='none';
+        }
+    }
+
+    function submitTest() {
+        let score = 0;
+        const body = document.getElementById('resultsBody'); 
+        if(body) body.innerHTML='';
+        
+        for(let i=1; i<=13; i++) {
+            let uAns = "";
+            let correctStr = answers[i] || "N/A";
+            let correctArr = correctStr.split('|').map(x => x.toUpperCase());
+            let isCorrect = false;
+
+            let el = document.getElementById(`q${i}`);
+            if(el && el.tagName === 'INPUT') uAns = el.value;
+            else if(document.querySelector(`input[name="q${i}"]:checked`)) {
+                uAns = document.querySelector(`input[name="q${i}"]:checked`).value;
+            }
+
+            uAns = (uAns || "-").trim().toUpperCase();
+            
+            if(correctArr.includes(uAns)) {
+               isCorrect = true;
+               score++;
+            }
+            
+            if(el && el.tagName === 'INPUT') {
+                el.classList.remove('correct', 'incorrect');
+                el.classList.add(isCorrect ? 'correct' : 'incorrect');
+            } else if (document.querySelector(`input[name="q${i}"]`)) {
+                document.querySelectorAll(`input[name="q${i}"]`).forEach(radio => {
+                    radio.parentElement.classList.remove('cell-correct', 'cell-incorrect');
+                });
+                let checkedRadio = document.querySelector(`input[name="q${i}"]:checked`);
+                if(checkedRadio) {
+                    checkedRadio.parentElement.classList.add(isCorrect ? 'cell-correct' : 'cell-incorrect');
+                }
+            }
+
+            let displayCorrect = correctArr[0];
+
+            if(body) {
+               body.innerHTML += `
+               <tr onclick="jumpToQ(${i})" style="cursor:pointer;" title="Click to review this question">
+                <td>${i}</td>
+                <td style="color:${isCorrect===true ? 'green' : 'red'}; font-weight:bold;">${uAns}</td>
+                <td style="font-weight:bold;">${displayCorrect}</td>
+                <td>${(isCorrect===true)?'Correct':'Incorrect'}</td>
+               </tr>`;
+            }
+        }
+        const scoreEl = document.getElementById('finalScore');
+        if(scoreEl) scoreEl.innerText = `Score: ${score} / 13`;
+        const modal = document.getElementById('resultsModal');
+        if(modal) modal.style.display='flex';
+    }
+
+    window.onload = init;
+</script>
+</body>
+</html>

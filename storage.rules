@@ -1,0 +1,19 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    function signedIn() { return request.auth != null; }
+    function admin() { return signedIn() && request.auth.token.admin == true; }
+    match /published-content/{allPaths=**} {
+      allow read: if true;
+      allow write: if admin() && request.resource.size < 20 * 1024 * 1024;
+    }
+    match /private-users/{uid}/recordings/{recordingId}/{fileName} {
+      allow read: if signedIn() && request.auth.uid == uid;
+      allow create: if signedIn() && request.auth.uid == uid
+        && request.resource.size < 25 * 1024 * 1024
+        && request.resource.contentType.matches('audio/.*');
+      allow update: if false;
+      allow delete: if signedIn() && request.auth.uid == uid;
+    }
+  }
+}

@@ -1,0 +1,7 @@
+{
+  "indexes": [
+    { "collectionGroup": "content", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "skill", "order": "ASCENDING" }, { "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "title", "order": "ASCENDING" }] },
+    { "collectionGroup": "attempts", "queryScope": "COLLECTION", "fields": [{ "fieldPath": "status", "order": "ASCENDING" }, { "fieldPath": "startedAt", "order": "DESCENDING" }] }
+  ],
+  "fieldOverrides": []
+}

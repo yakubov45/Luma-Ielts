@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IELTS Reading Simulator - The history of tea</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" />
+    <style>
+        /* --- VARIABLES & BASE STYLES --- */
+        :root {
+           --base-size: 16px;
+           --header-bg: #ffffff; --header-text: #333333;
+            --bg-app: #f4f4f4; --bg-paper: #ffffff;
+           --text-main: #000000; --border-color: #dcdcdc;
+           --footer-bg: #e0e0e0;
+           --active-q-bg: #333333; --active-q-text: #ffffff;
+           --instruction-bg: #fdfdfd; --instruction-border: #888888;
+            --btn-bg: #ffffff;
+           --highlight-color: #ffff00;
+        }
+
+        /* Dark Theme - White on Black */
+        body.theme-white-on-black {
+           --header-bg: #1a1a1a; --header-text: #ffffff;
+            --bg-app: #000000; --bg-paper: #121212;
+           --text-main: #ffffff; --border-color: #444444;
+           --footer-bg: #1a1a1a;
+           --active-q-bg: #ffffff; --active-q-text: #000000;
+           --instruction-bg: #222222; --instruction-border: #666666;
+            --btn-bg: #222222;
+        }
+
+        /* Yellow Theme - Yellow on Black */
+        body.theme-yellow-on-black {
+           --header-bg: #1a1a1a; --header-text: #ffff00;
+            --bg-app: #000000; --bg-paper: #121212;
+           --text-main: #ffff00; --border-color: #555500;
+           --footer-bg: #1a1a1a;
+           --active-q-bg: #ffff00; --active-q-text: #000000;
+           --instruction-bg: #222200; --instruction-border: #888800;
+            --btn-bg: #222200;
+        }
+        
+        * { box-sizing: border-box; }
+        body {
+            margin: 0; padding: 0;
+           font-family: 'Verdana', sans-serif;
+            height: 100vh;
+            display: flex; flex-direction: column;
+           background-color: var(--bg-app);
+            color: var(--text-main);
+            overflow: hidden;
+            font-size: var(--base-size);
+           transition: background-color 0.3s, color 0.3s;
+        }
+
+        /* --- HEADER --- */
+        .top-bar {
+           background-color: var(--header-bg); color: var(--header-text);
+            height: 60px; display: flex; align-items: center; justify-content: space-between;
+            padding: 0 20px; flex-shrink: 0; border-bottom: 1px solid var(--border-color);
+           box-shadow: 0 2px 4px rgba(0,0,0,0.05); z-index: 10; position: relative;
+        }
+        .top-left { font-weight: bold; font-size: 1.1em; flex: 1; }
+        
+        .timer-group {
+            position: absolute; left: 50%; transform: translateX(-50%);
+            display: flex; align-items: center; gap: 20px;
+        }
+        .timer { font-size: 1.4em; font-weight: bold; color: #d32f2f; font-family: monospace; }
+
+        .telegram-link {
+           text-decoration: none; color: #0088cc; font-size: 0.9em;
+            display: flex; align-items: center; gap: 5px;
+           background: rgba(0, 136, 204, 0.1); padding: 5px 12px; border-radius: 15px;
+           transition: background 0.2s; font-weight: bold;
+        }
+       .telegram-link:hover { background: rgba(0, 136, 204, 0.2); }
+
+        /* Settings Icon & Menu */
+        .top-right { flex: 1; display: flex; justify-content: flex-end; position: relative; }
+        .settings-icon { font-size: 1.5em; cursor: pointer; padding: 10px; color: var(--header-text); }
+       .settings-icon:hover { opacity: 0.7; }
+        
+        .settings-menu {
+            position: absolute; top: 50px; right: 0;
+           background: var(--bg-paper); border: 1px solid var(--border-color);
+           box-shadow: 0 4px 12px rgba(0,0,0,0.15); border-radius: 4px;
+            padding: 15px; display: none; width: 220px; z-index: 1000;
+            color: var(--text-main);
+        }
+        .settings-menu h4 { margin: 0 0 10px 0; font-size: 1em; font-weight: bold; border-bottom: 1px solid var(--border-color); padding-bottom: 5px; }
+        .settings-menu h4:nth-of-type(2) { margin-top: 20px; }
+       .settings-label { display: block; margin-bottom: 8px; cursor: pointer; font-size: 0.9em; }
+       .settings-label input { margin-right: 8px; }
+
+        /* --- INSTRUCTION BANNER --- */
+       .instruction-banner {
+           background-color: var(--instruction-bg); padding: 8px 20px;
+           border-bottom: 1px solid var(--border-color);
+            font-size: 0.95em; color: var(--text-main); flex-shrink: 0;
+        }
+
+        /* --- MAIN LAYOUT --- */
+       .main-container {
+            display: flex; flex: 1; overflow: hidden;
+           background-color: var(--bg-paper); position: relative;
+        }
+        .passage-pane, .question-pane {
+            padding: 30px; overflow-y: auto; line-height: 1.7; outline: none; height: 100%;
+        }
+        .passage-pane {
+            width: 50%; border-right: 2px solid var(--border-color);
+           background: var(--bg-paper); font-family: 'Times New Roman', Times, serif; font-size: 1.15em;
+        }
+        .question-pane {
+            flex: 1; background-color: var(--bg-paper); font-family: 'Verdana', sans-serif;
+        }
+        .divider {
+            width: 8px; background: var(--bg-app); cursor: col-resize;
+           border-left: 1px solid var(--border-color); border-right: 1px solid var(--border-color);
+           flex-shrink: 0; display: flex; align-items: center; justify-content: center; z-index: 10;
+        }
+
+        .passage-pane h2 { font-size: 1.8em; margin: 5px 0 20px 0; font-weight: bold; text-align: center;}
+        .passage-pane p { margin-bottom: 18px; text-align: justify; }
+
+        /* --- QUESTIONS --- */
+       .instruction-box {
+            border: 1px solid var(--instruction-border); background-color: var(--instruction-bg);
+            padding: 15px; margin-bottom: 25px; font-size: 0.9em;
+        }
+        .q-item { margin-bottom: 25px; }
+        .q-num-box {
+            display: inline-block; border: 1px solid var(--text-main);
+            padding: 2px 5px; margin-right: 8px; font-weight: bold;
+            min-width: 25px; text-align: center;
+        }
+        
+        .gap-input {
+           text-align: center; width: 140px; font-weight: bold; 
+           border-bottom: 1px solid var(--text-main); 
+           border-top: none; border-left: none; border-right: none; 
+           background: transparent; color: var(--text-main); font-size: 1em;
+        }
+       .gap-input:focus { outline: none; border-bottom: 2px solid #0088cc; }
+       .gap-input:not(:placeholder-shown) { font-style: normal; }
+        
+        /* Multiple Choice Vertical Styles */
+        .mcq-options { padding-left: 35px; margin-top: 10px; }
+        .mcq-label { display: block; margin-bottom: 8px; cursor: pointer; }
+        .mcq-label input { margin-right: 8px; }
+
+        /* --- FOOTER --- */
+        .footer-bar {
+            height: 60px; background-color: var(--footer-bg); border-top: 1px solid var(--border-color);
+            display: flex; align-items: stretch; padding: 0; flex-shrink: 0;
+        }
+       .footer-parts-container { display: flex; flex: 1; align-items: center; padding-left: 20px; }
+       .q-numbers-list { display: flex; gap: 4px; }
+        .q-btn {
+            width: 28px; height: 28px; display: flex; align-items: center; justify-content: center;
+            border: 1px solid var(--border-color); cursor: pointer; color: var(--text-main); background: var(--btn-bg);
+           border-radius: 2px; font-size: 13px;
+        }
+       .q-btn.answered { background-color: var(--active-q-bg); color: var(--active-q-text); font-weight: bold; border-color: var(--active-q-bg); }
+        
+       .submit-container {
+            width: 120px; background: var(--active-q-bg); color: var(--active-q-text); display: flex; align-items: center; justify-content: center;
+            cursor: pointer; font-weight: bold; border-left: 1px solid var(--border-color);
+        }
+       .submit-container:hover { opacity: 0.8; }
+
+        /* --- MODAL --- */
+        .modal-overlay {
+            position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+           background: rgba(0,0,0,0.8); z-index: 10000; display: none;
+           align-items: center; justify-content: center;
+        }
+        .modal-content {
+           background: #fff; width: 95%; max-width: 1100px; height: 90%;
+           border-radius: 4px; display: flex; flex-direction: column; color: #000;
+        }
+        .modal-header { background: #000; color: #fff; padding: 15px 20px; display: flex; justify-content: space-between; }
+        .modal-body { flex: 1; padding: 30px; overflow-y: auto; }
+        .result-table { width: 100%; border-collapse: collapse; }
+        .result-table th, .result-table td { padding: 10px; border: 1px solid #ddd; text-align: left; vertical-align: top; }
+       .explanation-text { font-size: 0.9em; color: #555; font-style: italic; }
+        
+        #highlightMenu { position: absolute; display: none; background: #fff; padding: 5px; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.3); z-index: 9999; }
+        .hl-color { width: 24px; height: 24px; display: inline-block; margin: 0 4px; cursor: pointer; border-radius: 4px; border: 1px solid #ccc; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <div class="top-left">IELTS Reading Simulator</div>
+        <div class="timer-group">
+            <div class="timer" id="timer">00:00</div>
+            <a href="https://t.me/khamidovs_ielts" target="_blank" class="telegram-link">
+                <i class="fab fa-telegram-plane"></i> @khamidovs_ielts
+            </a>
+        </div>
+        <div class="top-right">
+            <i class="fas fa-bars settings-icon" onclick="toggleSettings(event)"></i>
+            <div class="settings-menu" id="settingsMenu">
+               <h4>Text Size</h4>
+               <label class="settings-label"><input type="radio" name="textSize" value="16px" checked onchange="changeSize('16px')"> Standard</label>
+               <label class="settings-label"><input type="radio" name="textSize" value="20px" onchange="changeSize('20px')"> Large</label>
+               <label class="settings-label"><input type="radio" name="textSize" value="24px" onchange="changeSize('24px')"> Extra Large</label>
+               
+               <h4>Color Theme</h4>
+               <label class="settings-label"><input type="radio" name="themeColor" value="standard" checked onchange="changeTheme('standard')"> Standard</label>
+               <label class="settings-label"><input type="radio" name="themeColor" value="white-on-black" onchange="changeTheme('white-on-black')"> White on Black</label>
+               <label class="settings-label"><input type="radio" name="themeColor" value="yellow-on-black" onchange="changeTheme('yellow-on-black')"> Yellow on Black</label>
+           </div>
+        </div>
+    </div>
+
+    <div class="instruction-banner">
+       <strong>Reading Passage 1</strong> Read the text and answer questions 1–13.
+    </div>
+
+    <div class="main-container">
+        
+        <div class="passage-pane" id="passagePane">
+           <h2>The history of tea</h2>
+           <p>The story of tea begins in China. According to legend, in 2737 BC, the Chinese emperor Shen Nung was sitting beneath a tree while his servant boiled drinking water, when some leaves from the tree blew into the water. Shen Nung, a renowned herbalist, decided to try the infusion that his servant had accidentally created. The tree was a Camellia sinensis, and the resulting drink was what we now call tea. It is impossible to know whether there is any truth in this story. But tea drinking certainly became established in China many centuries before it had even been heard of in the West. Containers for tea have been found in tombs dating from the Han Dynasty (206 BC—220 AD) but it was under the Tang Dynasty (618—906 AD), that tea became firmly established as the national drink of China.</p>
+
+           <p>It became such a favourite that during the late eighth century a writer called Lu Yu wrote the first book entirely about tea, the Ch’a Ching, or Tea Classic. It was shortly after this that tea was first introduced to Japan, by Japanese Buddhist monks who had travelled to China to study. Tea received almost instant imperial sponsorship and spread rapidly from the royal court and monasteries to the other sections of Japanese society.</p>
+
+           <p>So at this stage in the history of tea, Europe was rather lagging behind. In the latter half of the sixteenth century there are the first brief mentions of tea as a drink among Europeans. These are mostly from Portuguese who were living in the East as traders and missionaries. But although some of these individuals may have brought back samples of tea to their native country, it was not the Portuguese who were the first to ship back tea as a commercial import. This was done by the Dutch, who in the last years of the sixteenth century began to encroach on Portuguese trading routes in the East. By the turn of the century they had established a trading post on the island of Java, and it was via Java that in 1606 the first consignment of tea was shipped from China to Holland. Tea soon became a fashionable drink among the Dutch, and from there spread to other countries in continental western Europe, but because of its high price it remained a drink for the wealthy.</p>
+
+           <p>Britain, always a little suspicious of continental trends, had yet to become the nation of tea drinkers that it is today. Starting in 1600, the British East India Company had a monopoly on importing goods from outside Europe, and it is likely that sailors on these ships brought tea home as gifts. The first coffee house had been established in London in 1652, and tea was still somewhat unfamiliar to most readers, so it is fair to assume that the drink was still something of a curiosity. Gradually, it became a popular drink in coffee houses, which were as many locations for the transaction of business as they were for relaxation or pleasure. They were though the preserve of middle- and upper-class men; women drank tea in their own homes, and as yet tea was still too expensive to be widespread among the working classes. In part, its high price was due to a punitive system of taxation.</p>
+
+           <p>One unforeseen consequence of the taxation of tea was the growth of methods to avoid taxation—smuggling and adulteration. By the eighteenth century many Britons wanted to drink tea but could not afford the high prices, and their enthusiasm for the drink was matched by the enthusiasm of criminal gangs to smuggle it in. What began as a small time illegal trade, selling a few pounds of tea to personal contacts, developed by die late eighteenth century into an astonishing organised crime network, perhaps importing as much as 7 million lbs annually, compared to a legal import of 5 million lbs! Worse for die drinkers was that taxation also encouraged the adulteration of tea, particularly of smuggled tea which was not quality controlled through customs and excise. Leaves from other plants, or leaves which had already been brewed and then dried, were added to tea leaves. By 1784, the government realised that enough was enough, and that heavy taxation was creating more problems than it was words. The new Prime Minister, William Pitt the Younger, slashed the tax from 119 per cent to 12.5 per cent. Suddenly legal tea was affordable, and smuggling stopped virtually overnight.</p>
+
+           <p>Another great impetus to tea drinking resulted from the end of the East India Company’s monopoly on trade with China, in 1834. Before that date, China was the country of origin of the vast majority of the tea imported to Britain, but the end of its monopoly stimulated the East India Company to consider growing tea outside China. India had always been the centre of the Company’s operations, which led to the increased cultivation of tea in India, beginning in Assam. There were a few false starts, including the destruction by cattle of one of the earliest tea nurseries, but by 1888 British tea imports from India were for the first time greater than those from China.</p>
+
+           <p>The end of the East India Company’s monopoly on trade with China also had another result, which was more dramatic though less important in the long term: it ushered in the era of the tea clippers. While the Company had had the monopoly on trade, there was no rush to bring the tea from China to Britain, but after 1834 the tea trade became a virtual free for all. Individual merchants and sea captains with their own ships raced to bring home the tea and make the most money, using fast new clippers which had sleek lines, tall masts and huge sails. In particular there was a competition between British and American merchants, leading to the famous clipper races of the 1860s. But these races soon came to an end with the opening of the Suez Canal, which made the trade routes to China viable for steamships for the first time.</p>
+        </div>
+
+        <div class="divider" id="divider"></div>
+
+        <div class="question-pane" id="questionPane">
+            
+            <div class="instruction-box">
+               <h3>Questions 1 – 7</h3>
+               <p>Complete the sentences below with words taken from Reading Passage 1.</p>
+               <p>Use <strong>ONE WORD</strong> for each answer.</p>
+           </div>
+
+            <ul>
+                <li class="q-item" id="q1-container"><span class="q-num-box">1</span> Researchers believed the tea containers detected in <input type="text" id="q1" class="gap-input" placeholder="1" oninput="updateStatus(1)"> from the Han Dynasty was the first evidence of the use of tea.</li>
+                <li class="q-item" id="q2-container"><span class="q-num-box">2</span> Lu Yu wrote a <input type="text" id="q2" class="gap-input" placeholder="2" oninput="updateStatus(2)"> about tea before anyone else in the eighth century.</li>
+                <li class="q-item" id="q3-container"><span class="q-num-box">3</span> It was <input type="text" id="q3" class="gap-input" placeholder="3" oninput="updateStatus(3)"> from Japan who brought tea to their native country from China.</li>
+                <li class="q-item" id="q4-container"><span class="q-num-box">4</span> Tea was carried from China to Europe actually by the <input type="text" id="q4" class="gap-input" placeholder="4" oninput="updateStatus(4)">.</li>
+                <li class="q-item" id="q5-container"><span class="q-num-box">5</span> The British government had to cut down the taxation on tea due to the serious crime of <input type="text" id="q5" class="gap-input" placeholder="5" oninput="updateStatus(5)">.</li>
+                <li class="q-item" id="q6-container"><span class="q-num-box">6</span> Tea was planted in <input type="text" id="q6" class="gap-input" placeholder="6" oninput="updateStatus(6)"> besides China in the 19th century.</li>
+                <li class="q-item" id="q7-container"><span class="q-num-box">7</span> In order to compete in shipping speed, traders used <input type="text" id="q7" class="gap-input" placeholder="7" oninput="updateStatus(7)"> for the race.</li>
+           </ul>
+
+            <div class="instruction-box" style="margin-top:40px;">
+               <h3>Questions 8 – 13</h3>
+               <p>Do the following statements agree with the information given in Reading Passage 1?</p>
+               <p><strong>TRUE</strong> if the statement agrees with the information<br>
+                  <strong>FALSE</strong> if the statement contradicts the information<br>
+                  <strong>NOT GIVEN</strong> if there is no information on this</p>
+           </div>
+
+            <div class="q-item" id="q8-div">
+               <span class="q-num-box">8</span> Tea was popular in Britain in the 16th century.
+               <div class="mcq-options">
+                   <label class="mcq-label"><input type="radio" name="q8" value="TRUE" onchange="updateStatus(8)"> TRUE</label>
+                   <label class="mcq-label"><input type="radio" name="q8" value="FALSE" onchange="updateStatus(8)"> FALSE</label>
+                   <label class="mcq-label"><input type="radio" name="q8" value="NOT GIVEN" onchange="updateStatus(8)"> NOT GIVEN</label>
+               </div>
+           </div>
+
+            <div class="q-item" id="q9-div">
+               <span class="q-num-box">9</span> Tea was more fashionable than coffee in Europe in the late 16th century.
+               <div class="mcq-options">
+                   <label class="mcq-label"><input type="radio" name="q9" value="TRUE" onchange="updateStatus(9)"> TRUE</label>
+                   <label class="mcq-label"><input type="radio" name="q9" value="FALSE" onchange="updateStatus(9)"> FALSE</label>
+                   <label class="mcq-label"><input type="radio" name="q9" value="NOT GIVEN" onchange="updateStatus(9)"> NOT GIVEN</label>
+               </div>
+           </div>
+
+            <div class="q-item" id="q10-div">
+               <span class="q-num-box">10</span> Tea was enjoyed by all classes in Britain in the seventeenth century.
+               <div class="mcq-options">
+                   <label class="mcq-label"><input type="radio" name="q10" value="TRUE" onchange="updateStatus(10)"> TRUE</label>
+                   <label class="mcq-label"><input type="radio" name="q10" value="FALSE" onchange="updateStatus(10)"> FALSE</label>
+                   <label class="mcq-label"><input type="radio" name="q10" value="NOT GIVEN" onchange="updateStatus(10)"> NOT GIVEN</label>
+               </div>
+           </div>
+
+            <div class="q-item" id="q11-div">
+               <span class="q-num-box">11</span> The adulteration of tea also prompted William Pitt the Younger to reduce the tax.
+               <div class="mcq-options">
+                   <label class="mcq-label"><input type="radio" name="q11" value="TRUE" onchange="updateStatus(11)"> TRUE</label>
+                   <label class="mcq-label"><input type="radio" name="q11" value="FALSE" onchange="updateStatus(11)"> FALSE</label>
+                   <label class="mcq-label"><input type="radio" name="q11" value="NOT GIVEN" onchange="updateStatus(11)"> NOT GIVEN</label>
+               </div>
+           </div>
+
+            <div class="q-item" id="q12-div">
+               <span class="q-num-box">12</span> Initial problems occurred when tea was planted outside China by the East India Company.
+               <div class="mcq-options">
+                   <label class="mcq-label"><input type="radio" name="q12" value="TRUE" onchange="updateStatus(12)"> TRUE</label>
+                   <label class="mcq-label"><input type="radio" name="q12" value="FALSE" onchange="updateStatus(12)"> FALSE</label>
+                   <label class="mcq-label"><input type="radio" name="q12" value="NOT GIVEN" onchange="updateStatus(12)"> NOT GIVEN</label>
+               </div>
+           </div>
+
+            <div class="q-item" id="q13-div">
+               <span class="q-num-box">13</span> The fastest vessels were owned by America during the 19th century clipper races.
+               <div class="mcq-options">
+                   <label class="mcq-label"><input type="radio" name="q13" value="TRUE" onchange="updateStatus(13)"> TRUE</label>
+                   <label class="mcq-label"><input type="radio" name="q13" value="FALSE" onchange="updateStatus(13)"> FALSE</label>
+                   <label class="mcq-label"><input type="radio" name="q13" value="NOT GIVEN" onchange="updateStatus(13)"> NOT GIVEN</label>
+               </div>
+           </div>
+
+        </div>
+    </div>
+
+    <div class="footer-bar">
+        <div class="footer-parts-container">
+            <div class="q-numbers-list" id="qList"></div>
+        </div>
+        <div class="submit-container" onclick="submitTest()">
+            SUBMIT
+        </div>
+    </div>
+
+    <div class="modal-overlay" id="resultsModal">
+        <div class="modal-content">
+            <div class="modal-header">
+               <h2>Test Results</h2>
+               <button onclick="document.getElementById('resultsModal').style.display='none'" style="background:none; border:none; color:#fff; font-size:20px; cursor:pointer;">&times;</button>
+           </div>
+            <div class="modal-body">
+                <h1 style="text-align:center; color:#000;" id="finalScore"></h1>
+               <table class="result-table">
+                   <thead><tr><th>Q</th><th>Your Answer</th><th>Correct Answer</th><th>Reasoning / Location</th></tr></thead>
+                   <tbody id="resultsBody"></tbody>
+               </table>
+           </div>
+        </div>
+    </div>
+
+    <div id="highlightMenu">
+        <span class="hl-color" style="background:#ffff00" onmousedown="applyHighlight('yellow', event)"></span>
+        <span class="hl-color" style="background:#44ff44" onmousedown="applyHighlight('#44ff44', event)"></span>
+        <span class="hl-color" style="background:#44ccff" onmousedown="applyHighlight('#44ccff', event)"></span>
+        <span class="hl-color" style="background:#fff; color:#333; text-align:center; line-height:22px; font-weight:bold; font-size:12px;" onmousedown="applyHighlight('remove', event)">X</span>
+    </div>
+
+<script>
+    // --- UI SETTINGS ---
+    function toggleSettings(e) {
+        const menu = document.getElementById('settingsMenu');
+       menu.style.display = menu.style.display === 'block' ? 'none' : 'block';
+       e.stopPropagation();
+    }
+
+    function changeSize(size) {
+       document.documentElement.style.setProperty('--base-size', size);
+    }
+
+    function changeTheme(theme) {
+       document.body.className = ''; 
+        if(theme !== 'standard') {
+           document.body.classList.add('theme-' + theme);
+        }
+    }
+
+    // Close settings if clicking outside
+   document.addEventListener('click', (e) => {
+        const menu = document.getElementById('settingsMenu');
+        if (menu && menu.style.display === 'block' && !menu.contains(e.target)) {
+           menu.style.display = 'none';
+        }
+    });
+
+    // --- TIMER (Stopwatch Counting Upwards) ---
+    let timeInSeconds = 0; 
+    const timerInterval = setInterval(() => {
+        timeInSeconds++;
+        const m = Math.floor(timeInSeconds / 60).toString().padStart(2, '0');
+        const s = (timeInSeconds % 60).toString().padStart(2, '0');
+       document.getElementById('timer').innerText = `${m}:${s}`;
+    }, 1000);
+
+    // --- DIVIDER DRAG ---
+    const divider = document.getElementById('divider');
+    const pPane = document.getElementById('passagePane');
+    let isDrag = false;
+   divider.addEventListener('mousedown', (e) => { isDrag = true; e.preventDefault(); });
+   document.addEventListener('mouseup', () => isDrag = false);
+   document.addEventListener('mousemove', (e) => {
+        if(isDrag) {
+            let pct = (e.clientX / window.innerWidth) * 100;
+            if(pct > 20 && pct < 80) pPane.style.width = pct + '%';
+        }
+    });
+
+    // --- HIGHLIGHTER ---
+    const hMenu = document.getElementById('highlightMenu');
+    let savedRange = null;
+   document.addEventListener('mouseup', (e) => {
+       if(e.target.closest('#highlightMenu') || e.target.closest('.settings-icon') || e.target.closest('.settings-menu')) return;
+        const sel = window.getSelection();
+       if(sel.rangeCount > 0 && sel.toString().length > 0) {
+            const node = sel.anchorNode;
+            if(node && node.parentElement && (node.parentElement.closest('.passage-pane') || node.parentElement.closest('.question-pane'))) {
+               savedRange = sel.getRangeAt(0).cloneRange();
+               hMenu.style.display = 'block';
+               hMenu.style.left = e.pageX + 'px';
+               hMenu.style.top = (e.pageY - 40) + 'px';
+               return;
+            }
+        }
+       hMenu.style.display = 'none';
+    });
+    
+    function applyHighlight(c, e) {
+       e.preventDefault(); e.stopPropagation();
+       if(!savedRange) return;
+        const sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(savedRange);
+       document.designMode = 'on';
+       if(c==='remove') { document.execCommand('removeFormat',false,null); document.execCommand('backColor',false,'transparent'); }
+        else { document.execCommand('backColor',false,c); }
+       document.designMode = 'off'; sel.removeAllRanges(); hMenu.style.display='none';
+    }
+
+    // --- ANSWER KEY & EXPLANATIONS ---
+    const answerData = {
+        1: { ans: 'tombs', exp: 'Para 1: "Containers for tea have been found in tombs dating from the Han Dynasty..."' },
+        2: { ans: 'book', exp: 'Para 2: "...a writer called Lu Yu wrote the first book entirely about tea..."' },
+        3: { ans: 'monks', exp: 'Para 2: "It was shortly after this that tea was first introduced to Japan, by Japanese Buddhist monks..."' },
+        4: { ans: 'Dutch', exp: 'Para 3: "...it was not the Portuguese who were the first to ship back tea as a commercial import. This was done by the Dutch..."' },
+        5: { ans: 'smuggling', exp: 'Para 5: "One unforeseen consequence of the taxation of tea was the growth of methods to avoid taxation—smuggling and adulteration. ... an astonishing organised crime network..." (Adulteration is also acceptable).' },
+        6: { ans: 'India', exp: 'Para 6: "...led to the increased cultivation of tea in India, beginning in Assam."' },
+        7: { ans: 'clippers', exp: 'Para 7: "...using fast new clippers which had sleek lines, tall masts and huge sails."' },
+        8: { ans: 'FALSE', exp: 'Para 4: "Britain... had yet to become the nation of tea drinkers that it is today. Starting in 1600..." The passage notes Europe was lagging behind in the 16th century.' },
+        9: { ans: 'NOT GIVEN', exp: 'The text does not compare the popularity of tea with coffee in Europe during the late 16th century.' },
+        10: { ans: 'FALSE', exp: 'Para 4: "...tea was still too expensive to be widespread among the working classes." (Refers to 17th-century context, post-1600).' },
+        11: { ans: 'TRUE', exp: 'Para 5: "Worse for the drinkers was that taxation also encouraged the adulteration of tea... By 1784, the government realised that enough was enough... The new Prime Minister, William Pitt the Younger, slashed the tax..."' },
+        12: { ans: 'TRUE', exp: 'Para 6: "There were a few false starts, including the destruction by cattle of one of the earliest tea nurseries..."' },
+        13: { ans: 'NOT GIVEN', exp: 'Para 7: Mentions competition between British and American merchants, leading to clipper races, but does not state who owned the "fastest vessels".' }
+    };
+
+    // --- INIT NAV BUTTONS ---
+    const qList = document.getElementById('qList');
+    for(let i=1; i<=13; i++) {
+        const btn = document.createElement('div');
+        btn.className = 'q-btn';
+        btn.innerText = i;
+        btn.id = `btn-q${i}`;
+        btn.onclick = () => {
+            const el = document.getElementById(`q${i}`) || document.getElementById(`q${i}-div`);
+            if(el) el.scrollIntoView({behavior:'smooth', block:'center'});
+        };
+       qList.appendChild(btn);
+    }
+
+    // --- UPDATE STATUS ---
+    function updateStatus(q) {
+        const btn = document.getElementById(`btn-q${q}`);
+        const input = document.getElementById(`q${q}`);
+        const radios = document.getElementsByName(`q${q}`);
+        
+        let answered = false;
+        
+        if(input && input.value.trim() !== '') {
+            answered = true;
+        }
+        
+       if(radios.length > 0) {
+            for(let i = 0; i < radios.length; i++) {
+               if(radios[i].checked) {
+                   answered = true; break;
+                }
+            }
+        }
+
+        if(answered) btn.classList.add('answered');
+        else btn.classList.remove('answered');
+    }
+
+    // --- SUBMIT ---
+    function submitTest() {
+       clearInterval(timerInterval);
+        let score = 0;
+        const body = document.getElementById('resultsBody');
+        body.innerHTML = '';
+
+        for(let i=1; i<=13; i++) {
+            let uAns = '';
+            const input = document.getElementById(`q${i}`);
+            const radios = document.getElementsByName(`q${i}`);
+            
+            if(input) {
+                uAns = input.value.trim();
+            } else if (radios.length > 0) {
+               for(let j = 0; j < radios.length; j++) {
+                   if(radios[j].checked) {
+                       uAns = radios[j].value; break;
+                    }
+                }
+            }
+
+            const correct = answerData[i].ans;
+            const isCorrect = uAns.toLowerCase() === correct.toLowerCase();
+           if(isCorrect && uAns !== '') score++;
+
+            let color = isCorrect ? 'green' : 'red';
+           body.innerHTML += `
+                <tr style="color: #000;">
+                   <td>${i}</td>
+                   <td style="color:${color}; font-weight:bold;">${uAns || '-'}</td>
+                   <td>${correct}</td>
+                   <td class="explanation-text">${answerData[i].exp}</td>
+               </tr>`;
+        }
+
+       document.getElementById('finalScore').innerText = `Score: ${score} / 13`;
+       document.getElementById('resultsModal').style.display = 'flex';
+    }
+</script>
+</body>
+</html>
