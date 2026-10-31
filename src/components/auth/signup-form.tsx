@@ -8,6 +8,7 @@ import { doc, serverTimestamp, setDoc } from "firebase/firestore";
 import { FormEvent, useState } from "react";
 import { auth, db } from "@/lib/firebase/client";
 import { ensureUserProfile } from "@/lib/auth/profile";
+import { syncGuestDataToAccount } from "@/lib/services/sync-service";
 
 function friendlyError(error: unknown, stage: string) {
   const code = error instanceof FirebaseError ? error.code : "unknown";
@@ -77,6 +78,13 @@ export function SignupForm() {
         console.warn("Verification email deferred:", err);
       }
 
+      // 5. Migrate any pre-signup guest progress
+      try {
+        await syncGuestDataToAccount(credential.user.uid);
+      } catch (err) {
+        console.warn("Guest data sync deferred on signup:", err);
+      }
+
       setSuccess(true);
       router.push("/dashboard");
     } catch (error) {
@@ -93,6 +101,7 @@ export function SignupForm() {
     try {
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
       await ensureUserProfile(credential.user);
+      await syncGuestDataToAccount(credential.user.uid);
       router.push("/dashboard");
     } catch (error) {
       console.error("Google sign-in error:", error);

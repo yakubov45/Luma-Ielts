@@ -159,7 +159,7 @@ const LISTENING_CATALOG_ITEMS: ListeningCatalogItem[] = [
     id: "oyster-bay-sailing-club",
     category: "section_practice",
     sectionNumber: 1,
-    title: "Oyster Bay Sailing Club Courses (Cambridge IELTS)",
+    title: "Oyster Bay Sailing Club Courses (IELTS-style Practice)",
     topic: "Beginner Sailing Courses & Practical Information (Table & Notes)",
     typeBadge: "Jadval & Eslatma",
     typeBadgeColor: "emerald",

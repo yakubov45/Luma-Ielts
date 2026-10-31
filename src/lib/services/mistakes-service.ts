@@ -69,17 +69,25 @@ export const DEFAULT_SAMPLE_MISTAKES: Mistake[] = [
 ];
 
 function getLocalMistakes(): Mistake[] {
-  if (typeof window === "undefined") return DEFAULT_SAMPLE_MISTAKES;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_SAMPLE_MISTAKES));
-      return DEFAULT_SAMPLE_MISTAKES;
-    }
+    if (!raw) return [];
     return JSON.parse(raw);
   } catch {
-    return DEFAULT_SAMPLE_MISTAKES;
+    return [];
   }
+}
+
+export function clearGuestMistakes() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+  } catch {}
+}
+
+export function getGuestMistakesList(): Mistake[] {
+  return getLocalMistakes();
 }
 
 function saveLocalMistakes(mistakes: Mistake[]) {
@@ -100,12 +108,7 @@ export async function fetchUserMistakes(uid: string | null | undefined): Promise
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-      // Seed default sample mistakes for new account
-      const initial = getLocalMistakes();
-      for (const item of initial) {
-        await setDoc(doc(db, `users/${uid}/mistakes`, item.id), item);
-      }
-      return initial;
+      return [];
     }
 
     return snapshot.docs.map((docSnap) => {
@@ -125,9 +128,20 @@ export async function fetchUserMistakes(uid: string | null | undefined): Promise
       };
     });
   } catch (err) {
-    console.warn("fetchUserMistakes error, fallback to local:", err);
-    return getLocalMistakes();
+    console.warn("fetchUserMistakes error:", err);
+    return [];
   }
+}
+
+export async function loadSampleMistakes(uid: string | null | undefined): Promise<Mistake[]> {
+  if (!uid) {
+    saveLocalMistakes(DEFAULT_SAMPLE_MISTAKES);
+    return DEFAULT_SAMPLE_MISTAKES;
+  }
+  for (const item of DEFAULT_SAMPLE_MISTAKES) {
+    await setDoc(doc(db, `users/${uid}/mistakes`, item.id), item);
+  }
+  return DEFAULT_SAMPLE_MISTAKES;
 }
 
 export async function toggleMistakeStatus(
@@ -137,12 +151,11 @@ export async function toggleMistakeStatus(
 ): Promise<"pending" | "reviewed"> {
   const newStatus: "pending" | "reviewed" = currentStatus === "pending" ? "reviewed" : "pending";
 
-  // Update local
-  const current = getLocalMistakes();
-  const updated: Mistake[] = current.map((m) => (m.id === mistakeId ? { ...m, status: newStatus } : m));
-  saveLocalMistakes(updated);
-
-  if (uid) {
+  if (!uid) {
+    const current = getLocalMistakes();
+    const updated: Mistake[] = current.map((m) => (m.id === mistakeId ? { ...m, status: newStatus } : m));
+    saveLocalMistakes(updated);
+  } else {
     try {
       await updateDoc(doc(db, `users/${uid}/mistakes`, mistakeId), {
         status: newStatus,
@@ -189,12 +202,12 @@ export async function recordMistakesFromTest(
 
   if (newMistakes.length === 0) return;
 
-  // Local update
-  const current = getLocalMistakes();
-  saveLocalMistakes([...newMistakes, ...current]);
-
-  // Firestore update
-  if (uid) {
+  if (!uid) {
+    // Guest: save to guest localStorage
+    const current = getLocalMistakes();
+    saveLocalMistakes([...newMistakes, ...current]);
+  } else {
+    // Authenticated user: save to private Firestore
     for (const m of newMistakes) {
       try {
         await setDoc(doc(db, `users/${uid}/mistakes`, m.id), m);

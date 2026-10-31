@@ -20,6 +20,9 @@ import {
   HelpCircle,
   FileEdit,
   Check,
+  Plus,
+  X,
+  Cloud,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -46,13 +49,25 @@ import {
   fetchSpeakingTopics,
   syncSpeakingTopicsToFirestore,
   saveChunkToUserVocabulary,
+  SpeakingAttempt,
+  saveLocalRecordingBlob,
+  getLocalRecordingBlob,
+  deleteSpeakingRecording,
+  uploadSpeakingRecording,
 } from "@/lib/services/speaking-service";
+import {
+  CustomSpeakingTask,
+  fetchUserCustomSpeakingTasks,
+  saveUserCustomSpeakingTask,
+  deleteUserCustomSpeakingTask,
+} from "@/lib/services/custom-tasks-service";
 
 export type SpeakingCategoryTab = "all" | "part1" | "part2" | "part3" | "full_mock" | "my_recordings";
-export type { SpeakingTopicItem, UsefulChunk };
+export type { SpeakingTopicItem, UsefulChunk, SpeakingAttempt };
 
 const TOPIC_FILTER_OPTIONS: SkillFilterOption[] = [
   { id: "all", label: "Barcha mavzular" },
+  { id: "custom", label: "Shaxsiy mavzular (Custom)" },
   { id: "daily_life", label: "Daily Life (Kundalik hayot)" },
   { id: "technology", label: "Technology & AI" },
   { id: "study_work", label: "Study & Work" },
@@ -60,16 +75,6 @@ const TOPIC_FILTER_OPTIONS: SkillFilterOption[] = [
   { id: "travel", label: "Travel & Cars" },
   { id: "environment", label: "Environment & Parks" },
 ];
-
-
-export type SpeakingAttempt = {
-  id: string;
-  part: number | string;
-  topic: string;
-  durationSeconds: number;
-  audioUrl: string;
-  createdAt: number;
-};
 
 const LOCAL_STORAGE_RECORDINGS_KEY = "ielts_focus_speaking_recordings";
 
@@ -81,20 +86,75 @@ export default function SpeakingPage() {
 
   // Topics and DB sync
   const [topics, setTopics] = useState<SpeakingTopicItem[]>(ALL_SPEAKING_TOPICS);
+  const [customTasks, setCustomTasks] = useState<CustomSpeakingTask[]>([]);
   const [isSyncing, setIsSyncing] = useState(false);
   const [syncMessage, setSyncMessage] = useState<string | null>(null);
   const [savedChunkKeys, setSavedChunkKeys] = useState<Set<string>>(new Set());
   const [chunkSearch, setChunkSearch] = useState("");
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
-  // Fetch speaking topics from Firestore or fallback
+  // Custom Topic Modal State
+  const [createModalOpen, setCreateModalOpen] = useState(false);
+  const [customTitle, setCustomTitle] = useState("");
+  const [customPart, setCustomPart] = useState<1 | 2 | 3>(2);
+  const [customPrompt, setCustomPrompt] = useState("");
+  const [customBullets, setCustomBullets] = useState("");
+  const [customError, setCustomError] = useState<string | null>(null);
+  const [isSavingCustom, setIsSavingCustom] = useState(false);
+
+  // Fetch speaking topics from Firestore or fallback, and user's custom tasks
   useEffect(() => {
     fetchSpeakingTopics().then((res) => {
       if (res && res.length > 0) {
         setTopics(res);
       }
     });
-  }, []);
+    fetchUserCustomSpeakingTasks(user?.uid).then((res) => {
+      setCustomTasks(res);
+    });
+  }, [user?.uid]);
+
+  const handleSaveCustomTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setCustomError(null);
+    if (!customTitle.trim() || customTitle.trim().length < 3) {
+      setCustomError("Mavzu nomi kamida 3 ta belgidan iborat bo‘lishi lozim.");
+      return;
+    }
+    if (!customPrompt.trim() || customPrompt.trim().length < 10) {
+      setCustomError("Topshiriq matni (prompt) kamida 10 ta belgidan iborat bo‘lishi lozim.");
+      return;
+    }
+
+    setIsSavingCustom(true);
+    try {
+      const bullets = customBullets
+        .split(/[\n,;]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+      const saved = await saveUserCustomSpeakingTask(user?.uid, {
+        topic: customTitle.trim(),
+        part: customPart,
+        prompt: customPrompt.trim(),
+        bulletPoints: bullets.length > 0 ? bullets : undefined,
+      });
+
+      setCustomTasks((prev) => [saved, ...prev]);
+      setToastMessage("Yangi shaxsiy speaking mavzuingiz muvaffaqiyatli saqlandi!");
+      setTimeout(() => setToastMessage(null), 4000);
+      setCreateModalOpen(false);
+
+      setCustomTitle("");
+      setCustomPrompt("");
+      setCustomBullets("");
+      setCustomPart(2);
+    } catch (err: unknown) {
+      setCustomError(err instanceof Error ? err.message : "Mavzuni saqlashda xatolik yuz berdi.");
+    } finally {
+      setIsSavingCustom(false);
+    }
+  };
 
   const handleSyncToFirestore = async () => {
     setIsSyncing(true);
@@ -240,23 +300,54 @@ export default function SpeakingPage() {
         }
       };
 
-      mediaRecorder.onstop = () => {
-        const blob = new Blob(audioChunksRef.current, { type: mimeType || "audio/webm" });
-        const url = URL.createObjectURL(blob);
+      mediaRecorder.onstop = async () => {
+        const chosenMime = mimeType || "audio/webm";
+        const blob = new Blob(audioChunksRef.current, { type: chosenMime });
+        const localUrl = URL.createObjectURL(blob);
         setAudioBlob(blob);
-        setAudioUrl(url);
+        setAudioUrl(localUrl);
 
+        const attemptId = `spk_${Date.now()}`;
         const newAttempt: SpeakingAttempt = {
-          id: `spk_${Date.now()}`,
+          id: attemptId,
           part: activeTopic ? activeTopic.part : 2,
           topic: activeTopic ? activeTopic.title : "IELTS Speaking Practice",
+          prompt: activeTopic?.prompt,
           durationSeconds: elapsed,
-          audioUrl: url,
+          audioUrl: localUrl,
+          mimeType: chosenMime,
           createdAt: Date.now(),
+          status: "saved_on_device",
+          isUserCreated: (activeTopic as any)?.isUserCreated ?? false,
         };
 
-        persistRecordings([newAttempt, ...pastRecordings]);
+        // 1. Binary persistence in IndexedDB for guest & offline durability
+        await saveLocalRecordingBlob(attemptId, blob, chosenMime);
+
+        // 2. Add to local state & localStorage metadata
+        const updatedList = [newAttempt, ...pastRecordings];
+        persistRecordings(updatedList);
         stream.getTracks().forEach((track) => track.stop());
+
+        // 3. Upload to Cloud Storage if authenticated user
+        if (user?.uid) {
+          const uploadingAttempt: SpeakingAttempt = { ...newAttempt, status: "uploading" };
+          persistRecordings([uploadingAttempt, ...pastRecordings]);
+
+          const uploadRes = await uploadSpeakingRecording(user.uid, newAttempt, blob);
+          if (uploadRes.success && uploadRes.downloadUrl) {
+            const savedAttempt: SpeakingAttempt = {
+              ...newAttempt,
+              status: "saved_to_account",
+              audioUrl: uploadRes.downloadUrl,
+              storagePath: uploadRes.storagePath,
+            };
+            persistRecordings([savedAttempt, ...pastRecordings]);
+          } else {
+            const failedAttempt: SpeakingAttempt = { ...newAttempt, status: "upload_failed" };
+            persistRecordings([failedAttempt, ...pastRecordings]);
+          }
+        }
       };
 
       mediaRecorder.start(250);
@@ -289,22 +380,49 @@ export default function SpeakingPage() {
     setPrepNotes("");
   };
 
-  const handleDeleteRecording = (id: string) => {
+  const handleDeleteRecording = async (id: string, storagePath?: string) => {
+    await deleteSpeakingRecording(id, storagePath, user?.uid);
     const next = pastRecordings.filter((r) => r.id !== id);
     persistRecordings(next);
   };
 
+  // Convert custom tasks to unified topic items
+  const customAsTopics: SpeakingTopicItem[] = useMemo(() => {
+    return customTasks.map((ct) => ({
+      id: ct.id,
+      part: ct.part,
+      title: ct.topic,
+      topicTag: "custom",
+      topicLabel: "Shaxsiy mavzu",
+      tags: ["custom", `part${ct.part}`],
+      status: "published",
+      durationMinutes: ct.part === 2 ? 4 : 5,
+      questionCount: ct.bulletPoints ? ct.bulletPoints.length : 3,
+      prompt: ct.prompt,
+      bulletPoints: ct.bulletPoints,
+      isUserCreated: true,
+      questionsOrCueCard: {
+        leadIn: ct.prompt,
+        points: ct.bulletPoints,
+      },
+    }));
+  }, [customTasks]);
+
+  const allCombinedTopics = useMemo(() => {
+    return [...customAsTopics, ...topics];
+  }, [customAsTopics, topics]);
+
   // Tab counters
   const tabCounts = useMemo(() => {
     return {
-      all: topics.length,
-      part1: topics.filter((t) => t.part === 1).length,
-      part2: topics.filter((t) => t.part === 2).length,
-      part3: topics.filter((t) => t.part === 3).length,
-      full_mock: topics.filter((t) => t.part === "full_mock").length,
+      all: allCombinedTopics.length,
+      part1: allCombinedTopics.filter((t) => t.part === 1).length,
+      part2: allCombinedTopics.filter((t) => t.part === 2).length,
+      part3: allCombinedTopics.filter((t) => t.part === 3).length,
+      full_mock: allCombinedTopics.filter((t) => t.part === "full_mock").length,
       my_recordings: pastRecordings.length,
     };
-  }, [topics, pastRecordings]);
+  }, [allCombinedTopics, pastRecordings]);
 
   const tabs = [
     { id: "all", label: "Barchasi", count: tabCounts.all },
@@ -317,13 +435,14 @@ export default function SpeakingPage() {
 
   // Filtering for Catalog
   const filteredTopics = useMemo(() => {
-    const list = topics.filter((item) => {
+    const list = allCombinedTopics.filter((item) => {
       if (activeCategory === "part1" && item.part !== 1) return false;
       if (activeCategory === "part2" && item.part !== 2) return false;
       if (activeCategory === "part3" && item.part !== 3) return false;
       if (activeCategory === "full_mock" && item.part !== "full_mock") return false;
 
-      if (selectedTopicTag !== "all" && item.topicTag !== selectedTopicTag) {
+      if (selectedTopicTag === "custom" && !item.isUserCreated) return false;
+      if (selectedTopicTag !== "all" && selectedTopicTag !== "custom" && item.topicTag !== selectedTopicTag) {
         return false;
       }
 
@@ -335,7 +454,7 @@ export default function SpeakingPage() {
       if (searchQuery.trim()) {
         const q = searchQuery.toLowerCase().trim();
         const matchesTitle = item.title.toLowerCase().includes(q);
-        const matchesTag = item.topicLabel.toLowerCase().includes(q);
+        const matchesTag = item.topicLabel ? item.topicLabel.toLowerCase().includes(q) : false;
         if (!matchesTitle && !matchesTag) return false;
       }
 
@@ -354,7 +473,17 @@ export default function SpeakingPage() {
     else if (sortBy === "shortest") sorted.sort((a, b) => a.durationMinutes - b.durationMinutes);
 
     return sorted;
-  }, [activeCategory, selectedTopicTag, lengthFilter, sortBy, searchQuery, statusFilter, pastRecordings, bookmarkedIds]);
+  }, [
+    allCombinedTopics,
+    activeCategory,
+    selectedTopicTag,
+    lengthFilter,
+    searchQuery,
+    statusFilter,
+    sortBy,
+    pastRecordings,
+    bookmarkedIds,
+  ]);
 
   const resetAllFilters = () => {
     setSearchQuery("");
@@ -722,12 +851,47 @@ export default function SpeakingPage() {
                 </div>
 
                 <div className="flex items-center gap-3">
-                  {rec.audioUrl && (
-                    <audio controls src={rec.audioUrl} className="h-8 max-w-[200px]" />
+                  {rec.status && (
+                    <span
+                      className={`text-[10px] font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                        rec.status === "saved_to_account"
+                          ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50"
+                          : rec.status === "uploading"
+                          ? "bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-200/50 animate-pulse"
+                          : rec.status === "upload_failed"
+                          ? "bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200/50"
+                          : "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border border-amber-200/50"
+                      }`}
+                    >
+                      {rec.status === "saved_to_account" && <Cloud className="w-3 h-3" />}
+                      {rec.status === "saved_to_account"
+                        ? "Bulutda saqlangan"
+                        : rec.status === "uploading"
+                        ? "Yuklanmoqda..."
+                        : rec.status === "upload_failed"
+                        ? "Yuklashda xato"
+                        : "Qurilmada"}
+                    </span>
                   )}
 
+                  <audio
+                    controls
+                    src={rec.audioUrl}
+                    className="h-8 max-w-[200px]"
+                    onPlay={async (e) => {
+                      const target = e.currentTarget;
+                      if (!target.src || target.src === window.location.href) {
+                        const blob = await getLocalRecordingBlob(rec.id);
+                        if (blob) {
+                          target.src = URL.createObjectURL(blob);
+                          target.play();
+                        }
+                      }
+                    }}
+                  />
+
                   <button
-                    onClick={() => handleDeleteRecording(rec.id)}
+                    onClick={() => handleDeleteRecording(rec.id, rec.storagePath)}
                     className="p-2 rounded-lg text-[var(--muted)] hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 cursor-pointer transition-colors"
                     title="O‘chirish"
                   >
@@ -752,11 +916,19 @@ export default function SpeakingPage() {
         description="Part 1 kundalik savollari, Part 2 mustaqil nutq (Cue Card) va Part 3 analitik munozara katalogi."
         icon={Mic}
         stats={[
-          { label: "Mavzular", value: topics.length },
+          { label: "Mavzular", value: allCombinedTopics.length },
           { label: "Yozuvlar", value: pastRecordings.length },
         ]}
         actions={
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setCreateModalOpen(true)}
+              className="btn-primary text-xs !py-2 !px-3.5 inline-flex items-center gap-1.5 cursor-pointer shadow-xs whitespace-nowrap"
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>Mavzu yaratish</span>
+            </button>
+
             <button
               onClick={handleSyncToFirestore}
               disabled={isSyncing}
@@ -860,29 +1032,34 @@ export default function SpeakingPage() {
               id: topic.id,
               skill: "speaking",
               title: topic.title,
-              topic: topic.topicLabel,
-              typeBadge:
-                topic.part === "full_mock"
-                  ? "Full Mock"
-                  : topic.part === 2
-                  ? "Part 2 (Cue Card)"
-                  : `Part ${topic.part}`,
-              typeBadgeColor:
-                topic.part === 1
-                  ? "emerald"
-                  : topic.part === 2
-                  ? "primary"
-                  : topic.part === 3
-                  ? "indigo"
-                  : "purple",
-              itemCountLabel:
-                topic.part === 2
-                  ? "1 daqiqa tayyorgarlik · 2 daqiqa nutq"
-                  : `${topic.questionCount} ta savol${
-                      topic.questionsOrCueCard.usefulChunks
-                        ? ` · ${topic.questionsOrCueCard.usefulChunks.length} ta ibora`
-                        : ""
-                    }`,
+              topic: topic.topicLabel || "Shaxsiy mavzu",
+              typeBadge: topic.isUserCreated
+                ? "Shaxsiy Mavzu"
+                : topic.part === "full_mock"
+                ? "Full Mock"
+                : topic.part === 2
+                ? "Part 2 (Cue Card)"
+                : `Part ${topic.part}`,
+              typeBadgeColor: topic.isUserCreated
+                ? "purple"
+                : topic.part === 1
+                ? "emerald"
+                : topic.part === 2
+                ? "primary"
+                : topic.part === 3
+                ? "indigo"
+                : "purple",
+              itemCountLabel: topic.isUserCreated
+                ? topic.bulletPoints && topic.bulletPoints.length > 0
+                  ? `${topic.bulletPoints.length} ta yordamchi savol`
+                  : "Shaxsiy mustaqil amaliyot"
+                : topic.part === 2
+                ? "1 daqiqa tayyorgarlik · 2 daqiqa nutq"
+                : `${topic.questionCount || 3} ta savol${
+                    topic.questionsOrCueCard?.usefulChunks
+                      ? ` · ${topic.questionsOrCueCard.usefulChunks.length} ta ibora`
+                      : ""
+                  }`,
               durationMinutes: topic.durationMinutes,
               status,
               onAction: () => setActiveTopic(topic),
@@ -902,29 +1079,34 @@ export default function SpeakingPage() {
               id: topic.id,
               skill: "speaking",
               title: topic.title,
-              topic: topic.topicLabel,
-              typeBadge:
-                topic.part === "full_mock"
-                  ? "Full Mock"
-                  : topic.part === 2
-                  ? "Part 2 (Cue Card)"
-                  : `Part ${topic.part}`,
-              typeBadgeColor:
-                topic.part === 1
-                  ? "emerald"
-                  : topic.part === 2
-                  ? "primary"
-                  : topic.part === 3
-                  ? "indigo"
-                  : "purple",
-              itemCountLabel:
-                topic.part === 2
-                  ? "1 daqiqa tayyorgarlik · 2 daqiqa nutq"
-                  : `${topic.questionCount} ta savol${
-                      topic.questionsOrCueCard.usefulChunks
-                        ? ` · ${topic.questionsOrCueCard.usefulChunks.length} ta ibora`
-                        : ""
-                    }`,
+              topic: topic.topicLabel || "Shaxsiy mavzu",
+              typeBadge: topic.isUserCreated
+                ? "Shaxsiy Mavzu"
+                : topic.part === "full_mock"
+                ? "Full Mock"
+                : topic.part === 2
+                ? "Part 2 (Cue Card)"
+                : `Part ${topic.part}`,
+              typeBadgeColor: topic.isUserCreated
+                ? "purple"
+                : topic.part === 1
+                ? "emerald"
+                : topic.part === 2
+                ? "primary"
+                : topic.part === 3
+                ? "indigo"
+                : "purple",
+              itemCountLabel: topic.isUserCreated
+                ? topic.bulletPoints && topic.bulletPoints.length > 0
+                  ? `${topic.bulletPoints.length} ta yordamchi savol`
+                  : "Shaxsiy mustaqil amaliyot"
+                : topic.part === 2
+                ? "1 daqiqa tayyorgarlik · 2 daqiqa nutq"
+                : `${topic.questionCount || 3} ta savol${
+                    topic.questionsOrCueCard?.usefulChunks
+                      ? ` · ${topic.questionsOrCueCard.usefulChunks.length} ta ibora`
+                      : ""
+                  }`,
               durationMinutes: topic.durationMinutes,
               status,
               onAction: () => setActiveTopic(topic),
@@ -933,6 +1115,130 @@ export default function SpeakingPage() {
 
             return <ActivityCard key={topic.id} item={cardData} />;
           })}
+        </div>
+      )}
+
+      {/* Custom Speaking Task Modal (Section 10) */}
+      {createModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-[var(--surface)] border border-[var(--border)] rounded-3xl max-w-lg w-full p-6 space-y-5 shadow-2xl relative">
+            <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
+              <div className="flex items-center gap-2">
+                <div className="w-8 h-8 rounded-xl bg-orange-100 dark:bg-orange-950/60 text-[var(--primary)] flex items-center justify-center">
+                  <Mic className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-base font-extrabold text-[var(--foreground)]">
+                    O‘z mavzuingizni yarating
+                  </h3>
+                  <span className="text-xs text-[var(--muted)]">
+                    Shaxsiy cue card yoki savollar to‘plami
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCreateModalOpen(false)}
+                className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--foreground)] hover:bg-[var(--surface-subtle)]"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveCustomTask} className="space-y-4">
+              {customError && (
+                <div className="p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border border-rose-200 text-xs font-semibold text-rose-600 dark:text-rose-400">
+                  {customError}
+                </div>
+              )}
+
+              <div>
+                <label className="text-xs font-bold text-[var(--foreground)] block mb-1.5">
+                  Speaking Qismi (Part)
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {[
+                    { id: 1, label: "Part 1 (Savollar)" },
+                    { id: 2, label: "Part 2 (Cue Card)" },
+                    { id: 3, label: "Part 3 (Munozara)" },
+                  ].map((p) => (
+                    <button
+                      key={p.id}
+                      type="button"
+                      onClick={() => setCustomPart(p.id as 1 | 2 | 3)}
+                      className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all cursor-pointer border ${
+                        customPart === p.id
+                          ? "bg-[var(--primary)] text-white border-[var(--primary)] shadow-xs"
+                          : "bg-[var(--surface-subtle)] text-[var(--secondary)] border-[var(--border)] hover:text-[var(--foreground)]"
+                      }`}
+                    >
+                      {p.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[var(--foreground)] block mb-1">
+                  Mavzu nomi (Title)
+                </label>
+                <input
+                  type="text"
+                  value={customTitle}
+                  onChange={(e) => setCustomTitle(e.target.value)}
+                  placeholder="Masalan: A Memorable Family Vacation"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--foreground)] focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)]"
+                  maxLength={100}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[var(--foreground)] block mb-1">
+                  Topshiriq matni (Prompt / Task Instructions)
+                </label>
+                <textarea
+                  value={customPrompt}
+                  onChange={(e) => setCustomPrompt(e.target.value)}
+                  placeholder="Describe a vacation you went on with your family. Explain where you went, what you did, and why it was memorable."
+                  rows={3}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--foreground)] focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)] resize-none"
+                  maxLength={500}
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold text-[var(--foreground)] block mb-1">
+                  Yordamchi bandlar (Bullet points - har biri yangi qatorda)
+                </label>
+                <textarea
+                  value={customBullets}
+                  onChange={(e) => setCustomBullets(e.target.value)}
+                  placeholder="Where you went&#10;Who you went with&#10;What you did there&#10;Explain why it was memorable"
+                  rows={3}
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-xs text-[var(--foreground)] focus:outline-hidden focus:ring-2 focus:ring-[var(--primary)] resize-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border)]">
+                <button
+                  type="button"
+                  onClick={() => setCreateModalOpen(false)}
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-[var(--secondary)] hover:bg-[var(--surface-subtle)]"
+                >
+                  Bekor qilish
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSavingCustom}
+                  className="btn-primary text-xs !py-2 !px-4 shadow-xs"
+                >
+                  {isSavingCustom ? "Saqlanmoqda..." : "Mavzuni saqlash"}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

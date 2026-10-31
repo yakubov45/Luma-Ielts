@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import {
   ShieldCheck,
+  ShieldAlert,
   Plus,
   Search,
   BookOpen,
@@ -19,6 +20,7 @@ import {
   RotateCcw,
   Sparkles,
 } from "lucide-react";
+import { useAuth } from "@/components/auth/auth-provider";
 import { SAMPLE_READING_TESTS, SampleReadingTest } from "@/lib/reading/sample-data";
 import {
   fetchQualityReports,
@@ -28,6 +30,7 @@ import {
 } from "@/lib/services/quality-reports-service";
 
 export default function AdminPage() {
+  const { user, loading, isAdmin } = useAuth();
   const [activeTab, setActiveTab] = useState<"cms" | "quality_reports">("cms");
   const [tests, setTests] = useState<SampleReadingTest[]>(SAMPLE_READING_TESTS);
   const [search, setSearch] = useState("");
@@ -138,6 +141,38 @@ export default function AdminPage() {
     setQAccepted("");
     setQExplanation("");
   };
+
+  if (loading) {
+    return (
+      <div className="min-h-[400px] flex flex-col items-center justify-center gap-3">
+        <div className="w-8 h-8 border-3 border-[var(--primary)] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-[var(--secondary)] font-medium">Administrator huquqlari tekshirilmoqda...</p>
+      </div>
+    );
+  }
+
+  if (!user || !isAdmin) {
+    return (
+      <div className="min-h-[460px] flex flex-col items-center justify-center text-center p-8 bg-[var(--surface)] border border-[var(--border)] rounded-3xl max-w-lg mx-auto mt-10 shadow-sm animate-fade-in">
+        <div className="w-16 h-16 rounded-2xl bg-red-500/10 text-red-600 dark:text-red-400 flex items-center justify-center mb-5 ring-8 ring-red-500/5">
+          <ShieldAlert className="w-8 h-8" />
+        </div>
+        <span className="eyebrow !text-red-600 dark:!text-red-400 mb-1">Xavfsizlik chegarasi</span>
+        <h2 className="text-2xl font-black text-[var(--foreground)] mb-2 tracking-tight">
+          403: Ruxsat berilmagan
+        </h2>
+        <p className="text-sm text-[var(--secondary)] leading-relaxed mb-6">
+          Ushbu sahifaga faqat platforma ma’murlari (custom claim: <code className="px-1.5 py-0.5 rounded bg-[var(--surface-subtle)] text-[var(--primary)] font-mono text-xs">admin: true</code>) kirish huquqiga ega. Oddiy o‘quvchi hisoblari orqali ma’muriyat amallari bajarilmaydi.
+        </p>
+        <Link
+          href="/dashboard"
+          className="btn-primary !px-6 !py-2.5 text-sm inline-flex items-center gap-2 shadow-xs"
+        >
+          Bosh sahifaga qaytish
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

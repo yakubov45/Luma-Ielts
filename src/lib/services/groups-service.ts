@@ -48,8 +48,8 @@ export const SAMPLE_GROUPS: Group[] = [
   },
   {
     id: "grp_forming_fast_track",
-    name: "Cambridge 18 Academic Fast-Track",
-    description: "Yangi guruh: Cambridge 18 to‘liq tahlillari va mezonlar bo‘yicha individual insho tekshiruvlari.",
+    name: "IELTS Academic 18 Fast-Track",
+    description: "Yangi guruh: IELTS Academic to‘liq tahlillari va mezonlar bo‘yicha individual insho tekshiruvlari.",
     examTrack: "academic",
     targetBand: 7.0,
     timezone: "Asia/Tashkent (UTC+5)",

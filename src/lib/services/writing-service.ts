@@ -243,33 +243,63 @@ export function evaluateEssayDeterministic(
   };
 }
 
-export function getWritingDraft(taskType: "task1" | "task2"): string {
+export function getWritingDraft(taskType: "task1" | "task2", uid?: string | null): string {
   if (typeof window === "undefined") return "";
   try {
-    return localStorage.getItem(`${DRAFT_KEY_PREFIX}${taskType}`) || "";
+    const key = uid ? `ielts_focus_draft_${uid}_${taskType}` : `${DRAFT_KEY_PREFIX}${taskType}`;
+    return localStorage.getItem(key) || "";
   } catch {
     return "";
   }
 }
 
-export function saveWritingDraft(taskType: "task1" | "task2", text: string) {
+export function saveWritingDraft(taskType: "task1" | "task2", text: string, uid?: string | null) {
   if (typeof window === "undefined") return;
   try {
-    localStorage.setItem(`${DRAFT_KEY_PREFIX}${taskType}`, text);
+    const key = uid ? `ielts_focus_draft_${uid}_${taskType}` : `${DRAFT_KEY_PREFIX}${taskType}`;
+    if (!text) {
+      localStorage.removeItem(key);
+    } else {
+      localStorage.setItem(key, text);
+    }
   } catch {}
+}
+
+export function clearGuestWriting() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+    localStorage.removeItem(`${DRAFT_KEY_PREFIX}task1`);
+    localStorage.removeItem(`${DRAFT_KEY_PREFIX}task2`);
+  } catch {}
+}
+
+export function getGuestWritingData(): { submissions: WritingSubmission[]; task1Draft: string; task2Draft: string } {
+  let submissions: WritingSubmission[] = [];
+  if (typeof window !== "undefined") {
+    try {
+      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+      if (raw) submissions = JSON.parse(raw);
+    } catch {}
+  }
+  return {
+    submissions,
+    task1Draft: getWritingDraft("task1"),
+    task2Draft: getWritingDraft("task2"),
+  };
 }
 
 export async function fetchUserWritingSubmissions(uid: string | null | undefined): Promise<WritingSubmission[]> {
   if (typeof window === "undefined") return [];
 
-  // Local storage check
-  let localList: WritingSubmission[] = [];
-  try {
-    const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (raw) localList = JSON.parse(raw);
-  } catch {}
-
-  if (!uid) return localList;
+  if (!uid) {
+    try {
+      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  }
 
   try {
     const colRef = collection(db, `users/${uid}/writingAttempts`);
@@ -278,11 +308,11 @@ export async function fetchUserWritingSubmissions(uid: string | null | undefined
     if (!snap.empty) {
       return snap.docs.map((d) => d.data() as WritingSubmission);
     }
+    return [];
   } catch (e) {
     console.warn("fetchUserWritingSubmissions Firestore error:", e);
+    return [];
   }
-
-  return localList;
 }
 
 export async function submitEssay(
@@ -308,20 +338,20 @@ export async function submitEssay(
     feedback,
   };
 
-  // Clear draft
-  saveWritingDraft(params.taskType, "");
+  // Clear draft for this user/guest
+  saveWritingDraft(params.taskType, "", uid);
 
-  // Save local
-  if (typeof window !== "undefined") {
-    try {
-      const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-      const list = raw ? JSON.parse(raw) : [];
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([submission, ...list]));
-    } catch {}
-  }
-
-  // Save Firestore
-  if (uid) {
+  if (!uid) {
+    // Guest: save to guest localStorage
+    if (typeof window !== "undefined") {
+      try {
+        const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
+        const list = raw ? JSON.parse(raw) : [];
+        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify([submission, ...list]));
+      } catch {}
+    }
+  } else {
+    // Authenticated user: save directly to Firestore
     try {
       await setDoc(doc(db, `users/${uid}/writingAttempts`, id), submission);
     } catch (e) {

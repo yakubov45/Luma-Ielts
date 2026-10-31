@@ -3,6 +3,7 @@
 import { getApp, getApps, initializeApp } from "firebase/app";
 import { connectAuthEmulator, getAuth } from "firebase/auth";
 import { connectFirestoreEmulator, getFirestore } from "firebase/firestore";
+import { getStorage, connectStorageEmulator } from "firebase/storage";
 
 // Configuration pasted from a console occasionally contains surrounding quotes.
 // Next.js does not remove them, so normalize here before Firebase consumes it.
@@ -23,8 +24,10 @@ const config = {
 const app = getApps().length ? getApp() : initializeApp(config);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+export const storage = getStorage(app);
 
 if (process.env.NEXT_PUBLIC_USE_FIREBASE_EMULATORS === "true" && typeof window !== "undefined") {
   connectAuthEmulator(auth, "http://127.0.0.1:9099", { disableWarnings: true });
   connectFirestoreEmulator(db, "127.0.0.1", 8080);
+  connectStorageEmulator(storage, "127.0.0.1", 9199);
 }

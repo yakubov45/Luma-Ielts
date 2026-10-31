@@ -89,17 +89,25 @@ export const DEFAULT_SAMPLE_WORDS: VocabWord[] = [
 ];
 
 function getLocalWords(): VocabWord[] {
-  if (typeof window === "undefined") return DEFAULT_SAMPLE_WORDS;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_SAMPLE_WORDS));
-      return DEFAULT_SAMPLE_WORDS;
-    }
+    if (!raw) return [];
     return JSON.parse(raw);
   } catch {
-    return DEFAULT_SAMPLE_WORDS;
+    return [];
   }
+}
+
+export function clearGuestVocabulary() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+  } catch {}
+}
+
+export function getGuestVocabularyWords(): VocabWord[] {
+  return getLocalWords();
 }
 
 function saveLocalWords(words: VocabWord[]) {
@@ -120,12 +128,7 @@ export async function fetchUserVocabulary(uid: string | null | undefined): Promi
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-      // First time initialization for new user - seed defaults into Firestore
-      const initial = getLocalWords();
-      for (const item of initial) {
-        await setDoc(doc(db, `users/${uid}/vocabulary`, item.id), item);
-      }
-      return initial;
+      return [];
     }
 
     return snapshot.docs.map((docSnap) => {
@@ -147,9 +150,20 @@ export async function fetchUserVocabulary(uid: string | null | undefined): Promi
       };
     });
   } catch (err) {
-    console.warn("fetchUserVocabulary Firestore error, falling back to local:", err);
-    return getLocalWords();
+    console.warn("fetchUserVocabulary Firestore error:", err);
+    return [];
   }
+}
+
+export async function loadSampleVocabulary(uid: string | null | undefined): Promise<VocabWord[]> {
+  if (!uid) {
+    saveLocalWords(DEFAULT_SAMPLE_WORDS);
+    return DEFAULT_SAMPLE_WORDS;
+  }
+  for (const item of DEFAULT_SAMPLE_WORDS) {
+    await setDoc(doc(db, `users/${uid}/vocabulary`, item.id), item);
+  }
+  return DEFAULT_SAMPLE_WORDS;
 }
 
 export async function addWordToVocabulary(
@@ -182,12 +196,13 @@ export async function addWordToVocabulary(
     createdAt: now,
   };
 
-  // Always update local storage
-  const currentLocal = getLocalWords();
-  const updatedLocal = [newWord, ...currentLocal.filter((w) => w.word.toLowerCase() !== cleanWord.toLowerCase())];
-  saveLocalWords(updatedLocal);
-
-  if (uid) {
+  if (!uid) {
+    // Guest word: store in guest localStorage
+    const currentLocal = getLocalWords();
+    const updatedLocal = [newWord, ...currentLocal.filter((w) => w.word.toLowerCase() !== cleanWord.toLowerCase())];
+    saveLocalWords(updatedLocal);
+  } else {
+    // Authenticated user: store in private Firestore collection
     try {
       await setDoc(doc(db, `users/${uid}/vocabulary`, id), newWord);
     } catch (e) {
@@ -237,16 +252,14 @@ export async function reviewWordSM2(
 
   const nextDueAt = now + intervalDays * 24 * 60 * 60 * 1000;
 
-  // Update local
-  const updatedLocal = currentWords.map((w) =>
-    w.id === wordId
-      ? { ...w, repetition, easeFactor, intervalDays, dueAt: nextDueAt, lastReviewedAt: now }
-      : w
-  );
-  saveLocalWords(updatedLocal);
-
-  // Update Firestore if user is authenticated
-  if (uid) {
+  if (!uid) {
+    const updatedLocal = currentWords.map((w) =>
+      w.id === wordId
+        ? { ...w, repetition, easeFactor, intervalDays, dueAt: nextDueAt, lastReviewedAt: now }
+        : w
+    );
+    saveLocalWords(updatedLocal);
+  } else {
     try {
       await updateDoc(doc(db, `users/${uid}/vocabulary`, wordId), {
         repetition,

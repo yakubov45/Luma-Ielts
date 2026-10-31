@@ -73,16 +73,13 @@ export function calculateIeltsBand(accuracyPercent: number): number {
 }
 
 function getLocalAttempts(): TestAttempt[] {
-  if (typeof window === "undefined") return DEFAULT_SAMPLE_ATTEMPTS;
+  if (typeof window === "undefined") return [];
   try {
     const raw = localStorage.getItem(LOCAL_STORAGE_KEY);
-    if (!raw) {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_SAMPLE_ATTEMPTS));
-      return DEFAULT_SAMPLE_ATTEMPTS;
-    }
+    if (!raw) return [];
     return JSON.parse(raw);
   } catch {
-    return DEFAULT_SAMPLE_ATTEMPTS;
+    return [];
   }
 }
 
@@ -91,6 +88,17 @@ function saveLocalAttempts(attempts: TestAttempt[]) {
   try {
     localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(attempts));
   } catch {}
+}
+
+export function clearGuestAttempts() {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.removeItem(LOCAL_STORAGE_KEY);
+  } catch {}
+}
+
+export function getGuestAttemptsList(): TestAttempt[] {
+  return getLocalAttempts();
 }
 
 export async function fetchUserAttempts(uid: string | null | undefined): Promise<TestAttempt[]> {
@@ -104,33 +112,31 @@ export async function fetchUserAttempts(uid: string | null | undefined): Promise
     const snapshot = await getDocs(q);
 
     if (snapshot.empty) {
-      const initial = getLocalAttempts();
-      for (const item of initial) {
-        await setDoc(doc(db, `users/${uid}/attempts`, item.id), item);
-      }
-      return initial;
+      return [];
     }
 
     return snapshot.docs.map((docSnap) => {
       const d = docSnap.data();
+      const accuracy = Number(d.accuracy ?? 0);
+      const total = Number(d.totalQuestions ?? d.total ?? 0);
       return {
         id: docSnap.id,
-        testId: d.testId || d.contentId || "urban-gardens-drill",
-        testTitle: d.testTitle || "IELTS Academic Test",
+        testId: d.testId || d.contentId || "",
+        testTitle: d.testTitle || "IELTS Test",
         skill: d.skill || "reading",
         correctCount: Number(d.correctCount ?? 0),
-        totalQuestions: Number(d.totalQuestions ?? d.total ?? 0),
-        accuracy: Number(d.accuracy ?? 0),
-        estimatedBand: Number(d.estimatedBand ?? calculateIeltsBand(Number(d.accuracy ?? 0))),
-        durationSeconds: Number(d.durationSeconds ?? 480),
+        totalQuestions: total,
+        accuracy,
+        estimatedBand: total >= 10 ? Number(d.estimatedBand ?? calculateIeltsBand(accuracy)) : 0,
+        durationSeconds: Number(d.durationSeconds ?? 0),
         submittedAt: typeof d.submittedAt === "number" ? d.submittedAt : d.submittedAt?.toMillis?.() || Date.now(),
         answers: d.answers || d.draftAnswers || {},
         questionBreakdown: d.questionBreakdown || [],
       };
     });
   } catch (err) {
-    console.warn("fetchUserAttempts error, fallback to local:", err);
-    return getLocalAttempts();
+    console.warn("fetchUserAttempts error:", err);
+    return [];
   }
 }
 
@@ -141,12 +147,12 @@ export async function saveTestAttempt(
   const id = `att_${Date.now()}`;
   const fullAttempt: TestAttempt = { ...attempt, id };
 
-  // Save locally
-  const current = getLocalAttempts();
-  saveLocalAttempts([fullAttempt, ...current]);
-
-  // Save to Firestore
-  if (uid) {
+  if (!uid) {
+    // Guest attempt -> save to guest local storage
+    const current = getLocalAttempts();
+    saveLocalAttempts([fullAttempt, ...current]);
+  } else {
+    // Authenticated user -> save directly to Firestore
     try {
       await setDoc(doc(db, `users/${uid}/attempts`, id), fullAttempt);
     } catch (e) {
@@ -160,28 +166,41 @@ export async function saveTestAttempt(
 export type UserProgressStats = {
   totalAttempts: number;
   totalQuestions: number;
-  overallAccuracy: number;
-  estimatedBand: number;
+  overallAccuracy: number | null;
+  estimatedBand: number | null;
+  hasOfficialBand: boolean;
   questionTypeStats: Record<string, { correct: number; total: number; percentage: number }>;
   weeklyMinutes: Record<string, number>; // "Dush", "Sesh", etc.
   latestAttempt?: TestAttempt;
 };
 
 export function computeProgressStats(attempts: TestAttempt[]): UserProgressStats {
+  const initialWeeklyMinutes: Record<string, number> = {
+    Dush: 0,
+    Sesh: 0,
+    Cho: 0,
+    Pay: 0,
+    Jum: 0,
+    Shan: 0,
+    Yak: 0,
+  };
+
   if (!attempts.length) {
     return {
       totalAttempts: 0,
       totalQuestions: 0,
-      overallAccuracy: 0,
-      estimatedBand: 6.0,
+      overallAccuracy: null,
+      estimatedBand: null,
+      hasOfficialBand: false,
       questionTypeStats: {},
-      weeklyMinutes: { Dush: 0, Sesh: 0, Cho: 0, Pay: 0, Jum: 0, Shan: 0, Yak: 0 },
+      weeklyMinutes: initialWeeklyMinutes,
     };
   }
 
   let totalCorrect = 0;
   let totalQuestions = 0;
   const questionTypeStats: Record<string, { correct: number; total: number; percentage: number }> = {};
+  const weeklyMinutes = { ...initialWeeklyMinutes };
 
   const dayMap: Record<number, string> = {
     1: "Dush",
@@ -192,26 +211,15 @@ export function computeProgressStats(attempts: TestAttempt[]): UserProgressStats
     6: "Shan",
     0: "Yak",
   };
-  const weeklyMinutes: Record<string, number> = {
-    Dush: 15,
-    Sesh: 25,
-    Cho: 20,
-    Pay: 10,
-    Jum: 30,
-    Shan: 35,
-    Yak: 15,
-  };
 
   for (const a of attempts) {
     totalCorrect += a.correctCount;
     totalQuestions += a.totalQuestions;
 
-    // Track day minutes
     const dayOfWeek = new Date(a.submittedAt).getDay();
     const dayName = dayMap[dayOfWeek] || "Dush";
-    weeklyMinutes[dayName] = (weeklyMinutes[dayName] || 0) + Math.round((a.durationSeconds || 480) / 60);
+    weeklyMinutes[dayName] = (weeklyMinutes[dayName] || 0) + Math.round((a.durationSeconds || 0) / 60);
 
-    // Question breakdown
     if (a.questionBreakdown) {
       for (const q of a.questionBreakdown) {
         if (!questionTypeStats[q.type]) {
@@ -223,31 +231,21 @@ export function computeProgressStats(attempts: TestAttempt[]): UserProgressStats
     }
   }
 
-  // Calculate percentages
   for (const key of Object.keys(questionTypeStats)) {
     const item = questionTypeStats[key];
     item.percentage = item.total > 0 ? Math.round((item.correct / item.total) * 100) : 0;
   }
 
-  // Defaults if question type breakdown is sparse
-  if (!questionTypeStats["True / False / Not Given"]) {
-    questionTypeStats["True / False / Not Given"] = { correct: 11, total: 13, percentage: 85 };
-  }
-  if (!questionTypeStats["Single Choice"]) {
-    questionTypeStats["Single Choice"] = { correct: 7, total: 9, percentage: 78 };
-  }
-  if (!questionTypeStats["Sentence Completion"]) {
-    questionTypeStats["Sentence Completion"] = { correct: 4, total: 6, percentage: 67 };
-  }
-
-  const overallAccuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : 83;
-  const estimatedBand = calculateIeltsBand(overallAccuracy);
+  const overallAccuracy = totalQuestions > 0 ? Math.round((totalCorrect / totalQuestions) * 100) : null;
+  const hasOfficialBand = totalQuestions >= 10 && overallAccuracy !== null;
+  const estimatedBand = hasOfficialBand ? calculateIeltsBand(overallAccuracy!) : null;
 
   return {
     totalAttempts: attempts.length,
     totalQuestions,
     overallAccuracy,
     estimatedBand,
+    hasOfficialBand,
     questionTypeStats,
     weeklyMinutes,
     latestAttempt: attempts[0],

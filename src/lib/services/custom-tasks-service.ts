@@ -157,6 +157,30 @@ export async function saveUserCustomSpeakingTask(
   return fullTask;
 }
 
+export async function deleteUserCustomSpeakingTask(
+  uid: string | undefined,
+  taskId: string
+): Promise<void> {
+  if (typeof window !== "undefined") {
+    try {
+      const existing = await fetchUserCustomSpeakingTasks(uid);
+      const updated = existing.filter((t) => t.id !== taskId);
+      localStorage.setItem(LOCAL_STORAGE_CUSTOM_SPEAKING, JSON.stringify(updated));
+    } catch {
+      // ignore
+    }
+  }
+
+  if (uid) {
+    try {
+      const { deleteDoc } = await import("firebase/firestore");
+      await deleteDoc(doc(db, "users", uid, "customSpeakingTasks", taskId));
+    } catch {
+      // ignore
+    }
+  }
+}
+
 // Generate targeted mini-exercises based on genuine weaknesses
 export function generateTargetedMiniExercises(
   weakQuestionTypes: string[] = ["True / False / Not Given", "Matching Headings"]

@@ -58,8 +58,73 @@ export default function DashboardPage() {
   const pendingMistakesCount = mistakes.filter((m) => m.status === "pending").length;
 
   const stats = computeProgressStats(attempts);
-  const latestAccuracy = stats.latestAttempt ? stats.latestAttempt.accuracy : 83;
-  const latestBand = stats.latestAttempt ? stats.latestAttempt.estimatedBand : 7.0;
+
+  // Dynamic explainable next activity recommendation (newplan.md Section 8)
+  const nextRecommendation = (() => {
+    // 1. Unfinished attempt
+    const inProgress = attempts.find((a) => (a as any).status === "in_progress");
+    if (inProgress) {
+      return {
+        badge: "Chala qolgan urinish",
+        title: inProgress.testTitle || "Davom ettirilayotgan test",
+        reason: "Siz avval boshlagan va hali yakunlamagan amaliyotingiz mavjud. Natijangizni qayd etish uchun uni yakunlang.",
+        durationMinutes: 10,
+        skill: "Reading Moduli",
+        url: `/reading/${inProgress.testId}`,
+        buttonText: "Davom ettirish",
+      };
+    }
+
+    // 2. Due vocabulary
+    if (dueVocabCount > 0) {
+      return {
+        badge: "Lug‘at takrori",
+        title: `${dueVocabCount} ta so‘zni takrorlash vaqti keldi`,
+        reason: "Spaced repetition (interval takrorlash) bo‘yicha bugun takrorlanishi zarur so‘zlar mavjud.",
+        durationMinutes: Math.min(15, Math.max(5, Math.round(dueVocabCount * 1.5))),
+        skill: "Vocabulary Moduli",
+        url: "/vocabulary",
+        buttonText: "So‘zlarni takrorlash",
+      };
+    }
+
+    // 3. Pending mistakes
+    if (pendingMistakesCount > 0) {
+      return {
+        badge: "Xatolar tahlili",
+        title: `${pendingMistakesCount} ta xato ustida ishlash`,
+        reason: "Oldingi mashqlarda yo‘l qo‘yilgan xatolarni qayta tahlil qilib, tushuntirishlar yordamida mustahkamlang.",
+        durationMinutes: Math.min(20, pendingMistakesCount * 3),
+        skill: "Mistakes Notebook",
+        url: "/mistakes",
+        buttonText: "Xatolarni ko‘rish",
+      };
+    }
+
+    // 4. Initial Diagnostic if 0 attempts
+    if (attempts.length === 0) {
+      return {
+        badge: "Boshlang‘ich tavsiya",
+        title: "IELTS Diagnostic Test: Boshlang‘ich darajani aniqlash",
+        reason: "Hali hech qanday test topshirmagansiz. Kuchli va zaif tomonlaringizni aniqlab, individual rejani tuzish uchun diagnostikadan o‘ting.",
+        durationMinutes: 15,
+        skill: "Diagnostic Moduli",
+        url: "/diagnostic",
+        buttonText: "Diagnostikani boshlash",
+      };
+    }
+
+    // 5. Default next practice
+    return {
+      badge: "Navbatdagi amaliyot",
+      title: "IELTS Reading Academic: Mock Test #1",
+      reason: "O‘quv rejangizga muvofiq navbatdagi to‘liq imtihon formati.",
+      durationMinutes: 60,
+      skill: "Reading Moduli",
+      url: "/reading/mock-test-1",
+      buttonText: "Testni boshlash",
+    };
+  })();
 
   return (
     <AuthGuard>
@@ -76,40 +141,39 @@ export default function DashboardPage() {
           </div>
           <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-[var(--surface)] border border-[var(--border)] text-xs font-semibold text-[var(--secondary)]">
             <Flame className="w-4 h-4 text-[var(--accent-orange)]" />
-            <span>{attempts.length > 0 ? "1 kunlik streak" : "0 kunlik streak"}</span>
+            <span>{attempts.length > 0 ? `${attempts.length} ta topshirilgan mashq` : "Hali test yo‘q"}</span>
           </div>
         </div>
 
-        {/* 2. Prominent “Continue studying” card */}
+        {/* 2. Prominent “Continue studying” card (Explainable recommendation) */}
         <section className="card border-2 border-[var(--border)] bg-gradient-to-br from-[var(--surface)] via-[var(--surface)] to-[var(--surface-subtle)] p-6 md:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-sm">
           <div className="space-y-2 max-w-xl">
-            <span className="eyebrow">Keyingi mashg‘ulot</span>
+            <span className="eyebrow">{nextRecommendation.badge}</span>
             <h2 className="text-xl md:text-2xl font-black text-[var(--foreground)] tracking-tight">
-              Urban Gardens: A Short Academic Drill
+              {nextRecommendation.title}
             </h2>
             <p className="text-sm text-[var(--secondary)] leading-relaxed">
-              Matn bilan ishlash, True/False/Not Given savollari va kalit so‘zlarni tahlil qilish.
-              O‘rtacha 8 daqiqa vaqt oladi.
+              {nextRecommendation.reason}
             </p>
             <div className="flex items-center gap-3 text-xs text-[var(--muted)] pt-1">
               <span className="flex items-center gap-1">
-                <Clock className="w-3.5 h-3.5" /> 8 daqiqa
+                <Clock className="w-3.5 h-3.5" /> ~{nextRecommendation.durationMinutes} daqiqa
               </span>
               <span>·</span>
-              <span>Reading Moduli</span>
+              <span>{nextRecommendation.skill}</span>
               <span>·</span>
-              <span>Academic Track</span>
+              <span>Individual tavsiya</span>
             </div>
           </div>
           <Link
-            href="/reading/urban-gardens-drill"
+            href={nextRecommendation.url}
             className="btn-primary whitespace-nowrap !py-3.5 !px-6 text-sm md:text-base shrink-0 shadow-sm"
           >
-            Mashqni davom ettirish <ArrowRight className="w-4 h-4 ml-1" />
+            {nextRecommendation.buttonText} <ArrowRight className="w-4 h-4 ml-1" />
           </Link>
         </section>
 
-        {/* 3. Small summary cards (Real Data) */}
+        {/* 3. Small summary cards (Honest Real Data) */}
         <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div className="card p-5 space-y-1">
             <div className="flex items-center justify-between text-xs text-[var(--muted)] font-semibold">
@@ -136,15 +200,21 @@ export default function DashboardPage() {
           <div className="card p-5 space-y-1">
             <div className="flex items-center justify-between text-xs text-[var(--muted)] font-semibold">
               <span>So‘nggi Reading aniqligi</span>
-              <span className="text-[var(--primary)] font-bold text-xs">
-                Band {latestBand.toFixed(1)}
-              </span>
+              {stats.latestAttempt ? (
+                <span className="text-[var(--primary)] font-bold text-xs">
+                  {stats.latestAttempt.totalQuestions >= 10 && stats.latestAttempt.estimatedBand
+                    ? `Band ${stats.latestAttempt.estimatedBand.toFixed(1)}`
+                    : "Amaliy drill"}
+                </span>
+              ) : (
+                <span className="text-[var(--muted)] font-medium text-xs">Test yo‘q</span>
+              )}
             </div>
             <p className="text-2xl font-black tabular text-[var(--foreground)]">
-              {latestAccuracy}%
+              {stats.latestAttempt ? `${stats.latestAttempt.accuracy}%` : "—"}
             </p>
             <p className="text-xs text-[var(--muted)]">
-              {attempts.length > 0 ? "oxirgi topshirilgan natija" : "namunaviy ko‘rsatkich"}
+              {stats.latestAttempt ? stats.latestAttempt.testTitle : "Hali test topshirilmagan"}
             </p>
           </div>
         </section>

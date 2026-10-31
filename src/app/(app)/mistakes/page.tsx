@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { AlertCircle, RotateCcw, CheckCircle2, Filter, BookOpen } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
-import { fetchUserMistakes, toggleMistakeStatus, Mistake } from "@/lib/services/mistakes-service";
+import { fetchUserMistakes, toggleMistakeStatus, loadSampleMistakes, Mistake } from "@/lib/services/mistakes-service";
 
 export default function MistakesPage() {
   const { user } = useAuth();
@@ -101,10 +101,21 @@ export default function MistakesPage() {
           <p className="text-xs text-[var(--muted)]">
             Yangi Reading yoki Listening mashqlarini bajarganingizda noto‘g‘ri javoblar avtomatik shu yerda tahlil uchun jamlanadi.
           </p>
-          <div className="pt-3">
+          <div className="pt-3 flex items-center justify-center gap-3">
             <Link href="/reading" className="btn-primary text-xs !py-2 !px-4">
               Reading mashqini boshlash →
             </Link>
+            {mistakes.length === 0 && (
+              <button
+                onClick={async () => {
+                  await loadSampleMistakes(user?.uid);
+                  loadData();
+                }}
+                className="btn-secondary !py-2 !px-4 text-xs font-semibold cursor-pointer"
+              >
+                Namuna xatolar tahlilini yuklash
+              </button>
+            )}
           </div>
         </div>
       ) : (

@@ -370,6 +370,20 @@ export function ListeningWorkspace({ testId = "oyster-bay-sailing-club", onExit 
               <span className="hidden sm:inline-flex px-2 py-0.5 rounded-md text-[10px] font-black uppercase tracking-wider bg-[var(--nav-active-bg)] text-[var(--nav-active-text)]">
                 Section {testData.sectionNumber}
               </span>
+              <span
+                className={`hidden md:inline-flex px-2 py-0.5 rounded-md text-[10px] font-bold ${
+                  (testData as any).audioUrl
+                    ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300"
+                    : "bg-amber-100 text-amber-800 dark:bg-amber-950/50 dark:text-amber-300"
+                }`}
+                title={
+                  (testData as any).audioUrl
+                    ? "Studiya audio yozuvi"
+                    : "Brauzer nutq sintezatori (TTS) orqali o‘qilmoqda"
+                }
+              >
+                {(testData as any).audioUrl ? "Studio Audio" : "Speech Synthesis (TTS)"}
+              </span>
             </div>
           </div>
         </div>
@@ -557,15 +571,20 @@ export function ListeningWorkspace({ testId = "oyster-bay-sailing-club", onExit 
           </p>
         </div>
 
-        {/* 4.A: OYSTER BAY SAILING CLUB — AUTHENTIC CAMBRIDGE TABLE & NOTES */}
+        {/* 4.A: OYSTER BAY SAILING CLUB — AUTHENTIC IELTS-STYLE TABLE & NOTES */}
         {testData.id === "oyster-bay-sailing-club" && (
           <div className="space-y-8">
             {/* Table Completion (Questions 1–6) */}
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
-                  Jadvalni to‘ldiring (Savollar 1–6)
-                </span>
+              <div className="flex flex-wrap items-center justify-between gap-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-bold uppercase tracking-wider text-[var(--muted)]">
+                    Jadvalni to‘ldiring (Savollar 1–6)
+                  </span>
+                  <span className="sm:hidden text-[10px] text-[var(--primary)] font-medium bg-[var(--surface-subtle)] px-2 py-0.5 rounded-full border border-[var(--border)]">
+                    ↔ Yon tomonga suring
+                  </span>
+                </div>
                 <span className="text-xs text-[var(--muted)]">Ko‘pi bilan 2 ta so‘z va/yoki raqam</span>
               </div>
 

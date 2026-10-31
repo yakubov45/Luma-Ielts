@@ -35,31 +35,70 @@ service cloud.firestore {
       match /dailyStats/{date} { allow read: if owner(uid); allow write: if false; }
     }
 
+    // Public educational content readable by everyone, mutable only by admins
     match /content/{contentId} {
       allow read: if true;
-      allow write: if true;
+      allow write: if admin();
       match /versions/{versionId}/{document=**} {
         allow read: if true;
-        allow write: if true;
+        allow write: if admin();
       }
     }
-    match /contentKeys/{document=**} { allow read, write: if true; }
+
+    // Answer keys must NEVER be accessible directly by client browsers
+    // Only Firebase Admin SDK on the server can read keys to grade attempts
+    match /contentKeys/{document=**} {
+      allow read, write: if false;
+    }
+
     match /aiJobs/{jobId} { allow read, write: if false; }
     match /auditLogs/{eventId} { allow read, write: if admin(); }
+
     match /contentReports/{reportId} {
       allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
       allow read: if signedIn() && (resource.data.ownerId == request.auth.uid || admin());
       allow update, delete: if admin();
     }
+
     match /speakingTopics/{topicId} {
       allow read: if true;
-      allow write: if true;
-    }
-    match /readingPassages/{passageId} {
-      allow read: if true;
-      allow write: if true;
+      allow write: if admin();
     }
 
+    match /readingPassages/{passageId} {
+      allow read: if true;
+      allow write: if admin();
+    }
+
+    // Custom speaking cue cards: private to the owner
+    match /customSpeakingTasks/{taskId} {
+      allow read: if signedIn() && resource.data.ownerId == request.auth.uid;
+      allow create: if signedIn() && request.resource.data.ownerId == request.auth.uid;
+      allow update, delete: if signedIn() && resource.data.ownerId == request.auth.uid;
+    }
+
+    // Groups: read by signed-in users, all mutations strictly via Admin SDK server transactions
+    match /groups/{groupId} {
+      allow read: if signedIn();
+      allow write: if false;
+
+      match /members/{memberId} {
+        allow read: if signedIn();
+        allow write: if false;
+      }
+      match /assignments/{assignmentId} {
+        allow read: if signedIn();
+        allow write: if false;
+      }
+      match /submissions/{submissionId} {
+        allow read: if signedIn();
+        allow write: if false;
+      }
+      match /announcements/{announcementId} {
+        allow read: if signedIn();
+        allow write: if false;
+      }
+    }
   }
 }
 

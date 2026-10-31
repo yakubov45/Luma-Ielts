@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { signOut } from "firebase/auth";
 import { Suspense, useState } from "react";
+import { clearSessionDataOnSignOut } from "@/lib/services/sync-service";
 import {
   LayoutDashboard,
   BookOpen,
@@ -132,7 +133,10 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
                 </div>
               </div>
               <button
-                onClick={() => signOut(auth)}
+                onClick={() => {
+                  clearSessionDataOnSignOut();
+                  signOut(auth);
+                }}
                 title="Chiqish"
                 className="p-1.5 rounded-lg text-[var(--muted)] hover:text-[var(--error)] hover:bg-rose-50 dark:hover:bg-rose-950/20 transition-colors cursor-pointer shrink-0"
               >

@@ -22,6 +22,8 @@ import {
   ChevronRight,
   Eye,
   ListOrdered,
+  BookOpen,
+  FileText,
 } from "lucide-react";
 import { db } from "@/lib/firebase/client";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -98,6 +100,9 @@ export function ReadingWorkspace() {
   // Question View Mode: "single" (Bitta-bitta / Fokus rejimi) or "all" (Ketma-ket)
   const [questionViewMode, setQuestionViewMode] = useState<"single" | "all">("single");
   const [activeQuestionId, setActiveQuestionId] = useState<string | null>(null);
+
+  // Mobile Layout Tab: "passage" vs "questions"
+  const [mobileTab, setMobileTab] = useState<"passage" | "questions">("questions");
 
   // Section 8 & 10 & 13 states: Answer-confidence, Contextual AI Help, and Quality Reporting
   const [confidence, setConfidence] = useState<Record<string, "confident" | "unsure">>({});
@@ -338,8 +343,9 @@ export function ReadingWorkspace() {
       const range = selection.getRangeAt(0);
       const rect = range.getBoundingClientRect();
       setSelectedText(text);
+      const viewportWidth = typeof window !== "undefined" ? window.innerWidth : 400;
       setToolbarPos({
-        x: Math.max(10, rect.left + rect.width / 2 - 110),
+        x: Math.min(Math.max(10, rect.left + rect.width / 2 - 110), Math.max(10, viewportWidth - 230)),
         y: Math.max(10, rect.top - 48 + window.scrollY),
       });
     } else {
@@ -355,28 +361,28 @@ export function ReadingWorkspace() {
 
   const lookupDefinition = async () => {
     setToolbarPos(null);
-    const cleanWord = selectedText.replace(/[^a-zA-Z]/g, "").toLowerCase();
+    const cleanWord = selectedText.replace(/[^a-zA-Z\-']/g, "").toLowerCase().trim();
+    if (!cleanWord) return;
     try {
-      const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${cleanWord}`);
+      const res = await fetch(`/api/dictionary?word=${encodeURIComponent(cleanWord)}`);
+      const data = await res.json();
       if (res.ok) {
-        const data = await res.json();
-        const entry = data[0];
         setDictPopover({
-          word: entry.word,
-          phonetic: entry.phonetic || entry.phonetics?.[0]?.text,
-          partOfSpeech: entry.meanings?.[0]?.partOfSpeech,
-          definition: entry.meanings?.[0]?.definitions?.[0]?.definition,
+          word: data.word || cleanWord,
+          phonetic: data.phonetic,
+          partOfSpeech: data.partOfSpeech,
+          definition: data.definition,
         });
       } else {
         setDictPopover({
           word: cleanWord,
-          definition: "Ta’rif topilmadi. Qayta urinib ko‘ring.",
+          definition: data.message || "Ta’rif topilmadi. Qayta urinib ko‘ring.",
         });
       }
     } catch {
       setDictPopover({
         word: cleanWord,
-        definition: "Lug‘at serveri bilan bog‘lanib bo‘lmadi.",
+        definition: "Lug‘at xizmatiga ulanishda xatolik yuz berdi.",
       });
     }
   };
@@ -1046,13 +1052,44 @@ export function ReadingWorkspace() {
         </div>
       )}
 
+      {/* Mobile-Only Tab Switcher (< lg screens) per Section 12 */}
+      <div className="lg:hidden sticky top-16 z-30 bg-[var(--background)]/95 backdrop-blur-md p-1.5 rounded-2xl border border-[var(--border)] shadow-xs flex items-center gap-2 mb-4">
+        <button
+          type="button"
+          onClick={() => setMobileTab("passage")}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            mobileTab === "passage"
+              ? "bg-[var(--primary)] text-white shadow-xs"
+              : "bg-[var(--surface-subtle)] text-[var(--secondary)] hover:text-[var(--foreground)]"
+          }`}
+        >
+          <BookOpen className="w-3.5 h-3.5" />
+          <span>Matn (Passage {activePassage.passageNumber})</span>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMobileTab("questions")}
+          className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 cursor-pointer ${
+            mobileTab === "questions"
+              ? "bg-[var(--primary)] text-white shadow-xs"
+              : "bg-[var(--surface-subtle)] text-[var(--secondary)] hover:text-[var(--foreground)]"
+          }`}
+        >
+          <FileText className="w-3.5 h-3.5" />
+          <span>Savollar ({Object.keys(answers).length}/{section?.questions.length || 40})</span>
+        </button>
+      </div>
+
       {/* Side-by-Side Study Layout (Passage & Questions) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start pb-8">
         {/* Left: Reading Passage (7 cols) - Official IELTS CD Layout */}
         <section
           ref={passageRef}
           onMouseUp={handleMouseUp}
-          className="lg:col-span-7 card reading-passage p-6 md:p-8 space-y-5"
+          className={`lg:col-span-7 card reading-passage p-6 md:p-8 space-y-5 ${
+            mobileTab === "passage" ? "block" : "hidden lg:block"
+          }`}
         >
           {/* Official IELTS Passage Header (per design screenshot) */}
           <div className="border-b border-[var(--border)] pb-4 space-y-2">
@@ -1090,7 +1127,11 @@ export function ReadingWorkspace() {
         </section>
 
         {/* Right: Active Passage Questions (5 cols) - Sticky so it stays right in front of the user while reading */}
-        <section className="lg:col-span-5 space-y-4 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto pr-1">
+        <section
+          className={`lg:col-span-5 space-y-4 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto pr-1 ${
+            mobileTab === "questions" ? "block" : "hidden lg:block"
+          }`}
+        >
           {/* Active Passage Question Navigator & Mode Switcher */}
           <div className="card p-4 space-y-3">
             <div className="flex flex-wrap items-center justify-between gap-2 text-xs font-semibold text-[var(--secondary)]">

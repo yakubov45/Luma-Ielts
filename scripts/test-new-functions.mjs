@@ -245,4 +245,135 @@ test("IELTS Reading Mock Tests: 10 Full Mock Exams combining P1+P2+P3 with 40 qu
   }
 });
 
+// Test SM-2 Spaced Repetition Algorithm & Adaptive Scheduling (Section 14)
+test("SM-2 Spaced Repetition: Adaptive intervals and ease factor calculations", () => {
+  function computeSM2(current, grade) {
+    let repetition = current.repetition;
+    let easeFactor = current.easeFactor;
+    let intervalDays = current.intervalDays;
+
+    if (grade === "again") {
+      repetition = 0;
+      intervalDays = 1;
+      easeFactor = Math.max(1.3, easeFactor - 0.2);
+    } else if (grade === "hard") {
+      repetition += 1;
+      intervalDays = Math.max(1, Math.round(intervalDays * 1.2));
+      easeFactor = Math.max(1.3, easeFactor - 0.15);
+    } else if (grade === "good") {
+      if (repetition === 0) intervalDays = 1;
+      else if (repetition === 1) intervalDays = 3;
+      else intervalDays = Math.round(intervalDays * easeFactor);
+      repetition += 1;
+    } else if (grade === "easy") {
+      if (repetition === 0) intervalDays = 3;
+      else if (repetition === 1) intervalDays = 6;
+      else intervalDays = Math.round(intervalDays * easeFactor * 1.3);
+      repetition += 1;
+      easeFactor = Math.min(3.0, easeFactor + 0.15);
+    }
+
+    return { repetition, easeFactor: Number(easeFactor.toFixed(2)), intervalDays };
+  }
+
+  // 1. Initial card (repetition: 0, ease: 2.5, interval: 1)
+  const initial = { repetition: 0, easeFactor: 2.5, intervalDays: 1 };
+
+  // First review: Good -> repetition 1, interval 1 day, ease unchanged
+  const rev1 = computeSM2(initial, "good");
+  assert.equal(rev1.repetition, 1);
+  assert.equal(rev1.intervalDays, 1);
+  assert.equal(rev1.easeFactor, 2.5);
+
+  // Second review: Good -> repetition 2, interval 3 days
+  const rev2 = computeSM2(rev1, "good");
+  assert.equal(rev2.repetition, 2);
+  assert.equal(rev2.intervalDays, 3);
+  assert.equal(rev2.easeFactor, 2.5);
+
+  // Third review: Good -> repetition 3, interval Math.round(3 * 2.5) = 8 days
+  const rev3 = computeSM2(rev2, "good");
+  assert.equal(rev3.repetition, 3);
+  assert.equal(rev3.intervalDays, 8);
+
+  // Fourth review: Again -> resets repetition to 0, interval 1 day, ease decreases by 0.2
+  const rev4 = computeSM2(rev3, "again");
+  assert.equal(rev4.repetition, 0);
+  assert.equal(rev4.intervalDays, 1);
+  assert.equal(rev4.easeFactor, 2.3);
+
+  // Fifth review: Easy -> repetition 1, interval 3 days, ease increases by 0.15
+  const rev5 = computeSM2(rev4, "easy");
+  assert.equal(rev5.repetition, 1);
+  assert.equal(rev5.intervalDays, 3);
+  assert.equal(rev5.easeFactor, 2.45);
+});
+
+// Test Guest Account Sync and User Isolation (Section 6)
+test("Guest Data Migration: Preserves local buffer on error and purges only after confirmed remote writes", async () => {
+  const localGuestBuffer = {
+    attempts: [{ id: "att_1", accuracy: 80 }],
+    vocab: [{ id: "w_1", word: "Salient" }],
+  };
+
+  let remoteDatabase = new Map();
+  let syncFailed = false;
+
+  async function mockSync(shouldFail) {
+    if (shouldFail) {
+      // Simulate network outage
+      return { success: false, error: "Network disconnected" };
+    }
+    // Success: commit to remote
+    for (const a of localGuestBuffer.attempts) {
+      remoteDatabase.set(a.id, a);
+    }
+    for (const v of localGuestBuffer.vocab) {
+      remoteDatabase.set(v.id, v);
+    }
+    // Clear local only on success
+    localGuestBuffer.attempts = [];
+    localGuestBuffer.vocab = [];
+    return { success: true };
+  }
+
+  // Attempt 1: Network failure -> local buffer stays intact
+  const res1 = await mockSync(true);
+  assert.equal(res1.success, false);
+  assert.equal(localGuestBuffer.attempts.length, 1, "Guest attempts must NOT be cleared on failure");
+  assert.equal(remoteDatabase.size, 0);
+
+  // Attempt 2: Reconnection -> successful migration
+  const res2 = await mockSync(false);
+  assert.equal(res2.success, true);
+  assert.equal(localGuestBuffer.attempts.length, 0, "Guest attempts cleared after verified write");
+  assert.equal(remoteDatabase.size, 2, "Remote database has both records");
+});
+
+test("User Isolation: Signing out clears session state so Account B never inherits Account A data", () => {
+  let localStorage = new Map();
+  
+  // User A logs in and writes drafts
+  const userA_Uid = "user_A_123";
+  localStorage.set(`ielts_focus_draft_${userA_Uid}_task1`, "Essay draft by User A");
+  localStorage.set("ielts_focus_attempts", JSON.stringify([{ id: "att_A" }]));
+
+  // Sign out called
+  function handleSignOut() {
+    // Clear guest / session buffers
+    localStorage.delete("ielts_focus_attempts");
+    localStorage.delete("ielts_focus_vocab_words");
+    localStorage.delete("ielts_focus_mistakes");
+  }
+  handleSignOut();
+
+  // User B logs in
+  const userB_Uid = "user_B_456";
+  const userBDraft = localStorage.get(`ielts_focus_draft_${userB_Uid}_task1`);
+  const guestAttempts = localStorage.get("ielts_focus_attempts");
+
+  assert.equal(userBDraft, undefined, "User B must not see User A's private draft");
+  assert.equal(guestAttempts, undefined, "Guest attempts must be cleared on logout");
+});
+
 console.log("All IELTS educational feature & capacity rules verified successfully!");

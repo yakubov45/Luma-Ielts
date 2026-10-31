@@ -8,6 +8,8 @@ import { FormEvent, useState } from "react";
 import { auth } from "@/lib/firebase/client";
 import { ensureUserProfile } from "@/lib/auth/profile";
 
+import { syncGuestDataToAccount } from "@/lib/services/sync-service";
+
 export function LoginForm() {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -22,11 +24,12 @@ export function LoginForm() {
 
     try {
       const credential = await signInWithEmailAndPassword(auth, email.trim(), password);
-      // Non-blocking profile check
+      // Non-blocking profile check and guest data synchronization
       try {
         await ensureUserProfile(credential.user);
+        await syncGuestDataToAccount(credential.user.uid);
       } catch (err) {
-        console.warn("Profile sync deferred on login:", err);
+        console.warn("Profile / guest sync deferred on login:", err);
       }
       router.push("/dashboard");
     } catch (error) {
@@ -61,6 +64,7 @@ export function LoginForm() {
     try {
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
       await ensureUserProfile(credential.user);
+      await syncGuestDataToAccount(credential.user.uid);
       router.push("/dashboard");
     } catch (error) {
       console.error("Google sign-in error", error);

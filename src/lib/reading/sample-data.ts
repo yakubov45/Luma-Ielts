@@ -176,7 +176,7 @@ export const BASE_DRILL_TESTS: SampleReadingTest[] = [
     examTrack: "academic",
     tags: ["architecture", "engineering", "sustainability"],
     estimatedDuration: 10,
-    source: "Cambridge Academic Drill",
+    source: "IELTS Academic Practice Drill",
     license: "CC BY 4.0",
     publishedVersion: "v1",
     section: {
@@ -239,7 +239,7 @@ export const BASE_DRILL_TESTS: SampleReadingTest[] = [
     examTrack: "academic",
     tags: ["energy", "technology", "climate"],
     estimatedDuration: 10,
-    source: "Cambridge Academic Drill",
+    source: "IELTS Academic Practice Drill",
     license: "CC BY 4.0",
     publishedVersion: "v1",
     section: {

@@ -324,17 +324,27 @@ export default function ProgressPage() {
             <div className="card p-5 space-y-1">
               <span className="text-xs text-[var(--muted)] font-semibold">Baholangan Band</span>
               <p className="text-3xl font-black text-[var(--primary)] tabular">
-                {stats.estimatedBand.toFixed(1)}
+                {stats.hasOfficialBand && stats.estimatedBand !== null
+                  ? stats.estimatedBand.toFixed(1)
+                  : "—"}
               </p>
-              <p className="text-xs text-[var(--muted)]">Haqiqiy aniqlik asosida</p>
+              <p className="text-xs text-[var(--muted)]">
+                {stats.hasOfficialBand
+                  ? "Haqiqiy aniqlik asosida"
+                  : "Kamida 10 ta savol talab etiladi"}
+              </p>
             </div>
 
             <div className="card p-5 space-y-1">
               <span className="text-xs text-[var(--muted)] font-semibold">Umumiy aniqlik</span>
               <p className="text-3xl font-black text-[var(--foreground)] tabular">
-                {stats.overallAccuracy}%
+                {stats.overallAccuracy !== null ? `${stats.overallAccuracy}%` : "—"}
               </p>
-              <p className="text-xs text-[var(--success)] font-semibold">+5% o‘tgan haftaga nisbatan</p>
+              <p className="text-xs text-[var(--muted)]">
+                {stats.totalAttempts > 0
+                  ? `${stats.totalAttempts} ta mashq bo‘yicha`
+                  : "Hali urinishlar yo‘q"}
+              </p>
             </div>
 
             <div className="card p-5 space-y-1">

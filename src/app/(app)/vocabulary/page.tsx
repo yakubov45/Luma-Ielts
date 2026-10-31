@@ -17,6 +17,7 @@ import {
   fetchUserVocabulary,
   addWordToVocabulary,
   reviewWordSM2,
+  loadSampleVocabulary,
   VocabWord,
   ReviewGrade,
 } from "@/lib/services/vocabulary-service";
@@ -274,12 +275,28 @@ export default function VocabularyPage() {
           Lug‘at ma’lumotlari yuklanmoqda…
         </div>
       ) : filteredWords.length === 0 ? (
-        <div className="card p-12 text-center space-y-2">
+        <div className="card p-12 text-center space-y-3">
           <BookOpen className="w-8 h-8 text-[var(--muted)] mx-auto" />
-          <h3 className="font-bold text-base text-[var(--foreground)]">Hech qanday so‘z topilmadi</h3>
-          <p className="text-xs text-[var(--muted)]">
-            Qidiruv so‘zini o‘zgartiring yoki yuqoridagi tugma orqali yangi so‘z qo‘shing.
+          <h3 className="font-bold text-base text-[var(--foreground)]">
+            {words.length === 0 ? "Hozircha saqlangan so‘zlar yo‘q" : "Qidiruv bo‘yicha so‘z topilmadi"}
+          </h3>
+          <p className="text-xs text-[var(--muted)] max-w-md mx-auto">
+            {words.length === 0
+              ? "Reading matnlaridan so‘zlarni tanlab saqlang, yuqoridagi tugma orqali yangi so‘z kiriting yoki namuna kartochkalarini yuklang."
+              : "Qidiruv so‘zini o‘zgartiring yoki filtrni tozalang."}
           </p>
+          {words.length === 0 && (
+            <button
+              onClick={async () => {
+                await loadSampleVocabulary(user?.uid);
+                loadData();
+              }}
+              className="btn-secondary !py-2 !px-4 text-xs font-semibold mx-auto inline-flex items-center gap-1.5 cursor-pointer mt-2"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-[var(--primary)]" />
+              Namuna kartochkalarini yuklash
+            </button>
+          )}
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">

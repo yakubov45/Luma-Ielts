@@ -11,6 +11,11 @@ export interface SpeakingTopicItem {
   topicLabel: string;
   questionCount: number;
   durationMinutes: number;
+  tags?: string[];
+  status?: string;
+  isUserCreated?: boolean;
+  prompt?: string;
+  bulletPoints?: string[];
   questionsOrCueCard: {
     leadIn?: string;
     points?: string[];
