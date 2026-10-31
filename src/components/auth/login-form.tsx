@@ -112,7 +112,7 @@ export function LoginForm() {
   }
 
   return (
-    <div className="card p-6 sm:p-8 space-y-6 shadow-xl border border-[var(--border)] bg-[var(--surface)] backdrop-blur-md">
+    <div className="p-6 sm:p-8 space-y-5 rounded-3xl shadow-2xl border border-white/60 dark:border-white/10 bg-white/85 dark:bg-[#121214]/85 backdrop-blur-xl">
       {/* Brand Header Inside Card */}
       <div className="text-center space-y-2">
         <Link href="/" className="inline-block group mb-1">
