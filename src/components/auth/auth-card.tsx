@@ -24,7 +24,6 @@ import {
   AlertCircle,
   CheckCircle2,
   ArrowRight,
-  Sparkles,
 } from "lucide-react";
 
 interface AuthCardProps {
@@ -71,7 +70,7 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
 
     if (mode === "signup" && !name.trim()) {
       setBusy(false);
-      setMessage("Iltimos, to‘liq ismingizni kiriting.");
+      setMessage("Iltimos, ismingizni kiriting.");
       return;
     }
 
@@ -180,30 +179,22 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
   }
 
   return (
-    <div className="relative p-5 sm:p-7 space-y-4 rounded-3xl shadow-[0_8px_32px_0_rgba(194,65,12,0.07),0_20px_50px_rgba(0,0,0,0.06),inset_0_1px_1px_0_rgba(255,255,255,0.85)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.12)] border border-white/70 dark:border-white/15 bg-white/40 dark:bg-[#121214]/50 backdrop-blur-2xl backdrop-saturate-150 transition-all duration-300">
-      {/* Top Glass Shimmer Border Line */}
+    <div className="relative p-5 sm:p-6 space-y-3.5 rounded-3xl shadow-[0_8px_32px_0_rgba(194,65,12,0.07),0_20px_50px_rgba(0,0,0,0.06),inset_0_1px_1px_0_rgba(255,255,255,0.85)] dark:shadow-[0_8px_32px_0_rgba(0,0,0,0.5),inset_0_1px_1px_0_rgba(255,255,255,0.12)] border border-white/70 dark:border-white/15 bg-white/40 dark:bg-[#121214]/50 backdrop-blur-2xl backdrop-saturate-150 transition-all duration-300">
+      {/* Top Glass Shimmer Line */}
       <div className="absolute top-0 left-6 right-6 h-px bg-gradient-to-r from-transparent via-white/80 dark:via-white/20 to-transparent pointer-events-none rounded-t-3xl" />
 
-      {/* Brand Header Inside Card */}
-      <div className="text-center space-y-1.5">
-        <div className="w-10 h-10 rounded-2xl p-1 bg-white/70 dark:bg-white/10 backdrop-blur-md border border-white/80 dark:border-white/15 shadow-xs mx-auto flex items-center justify-center">
+      {/* Brand Header Inside Card: Compact, Clean (No redundant subtitles) */}
+      <div className="text-center space-y-1">
+        <div className="w-9 h-9 rounded-2xl p-1 bg-white/70 dark:bg-white/10 backdrop-blur-md border border-white/80 dark:border-white/15 shadow-xs mx-auto flex items-center justify-center">
           <img
             src="/logo.png"
             alt="Lumo IELTS"
             className="w-full h-full object-contain"
           />
         </div>
-        <span className="text-[10px] uppercase tracking-wider font-extrabold text-[var(--primary)] block">
-          IELTS Academic & General
-        </span>
         <h1 className="text-xl sm:text-2xl font-black text-zinc-900 dark:text-zinc-50 tracking-tight transition-all duration-200">
-          {mode === "login" ? "O‘qishni davom ettiring" : "Yangi hisob ochish"}
+          {mode === "login" ? "Kirish" : "Ro‘yxatdan o‘tish"}
         </h1>
-        <p className="text-xs text-zinc-600 dark:text-zinc-300 transition-all duration-200">
-          {mode === "login"
-            ? "Shaxsiy o‘quv rejangiz va natijalaringizni ko‘rish uchun kiring."
-            : "Platforma imkoniyatlaridan to‘liq foydalanish uchun ro‘yxatdan o‘ting."}
-        </p>
       </div>
 
       {/* =========================================================================
@@ -214,7 +205,7 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
           id="auth-tab-login"
           type="button"
           onClick={() => switchMode("login")}
-          className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${
             mode === "login"
               ? "text-[var(--primary)] bg-white/95 dark:bg-zinc-800/90 shadow-sm border border-white/80 dark:border-white/10"
               : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
@@ -226,7 +217,7 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
           id="auth-tab-signup"
           type="button"
           onClick={() => switchMode("signup")}
-          className={`flex-1 py-1.5 sm:py-2 text-xs font-bold rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${
+          className={`flex-1 py-1.5 text-xs font-bold rounded-xl transition-all duration-300 cursor-pointer flex items-center justify-center gap-1.5 ${
             mode === "signup"
               ? "text-[var(--primary)] bg-white/95 dark:bg-zinc-800/90 shadow-sm border border-white/80 dark:border-white/10"
               : "text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-white"
@@ -242,7 +233,7 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
           type="button"
           disabled={busy}
           onClick={googleAuth}
-          className="w-full flex items-center justify-center gap-2.5 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-100 bg-white/60 dark:bg-white/[0.06] hover:bg-white/85 dark:hover:bg-white/10 border border-white/80 dark:border-white/15 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] dark:shadow-none backdrop-blur-md transition-all cursor-pointer active:scale-[0.99] disabled:opacity-60"
+          className="w-full flex items-center justify-center gap-2.5 py-2 px-4 rounded-xl text-xs sm:text-sm font-semibold text-zinc-800 dark:text-zinc-100 bg-white/60 dark:bg-white/[0.06] hover:bg-white/85 dark:hover:bg-white/10 border border-white/80 dark:border-white/15 shadow-[0_2px_8px_rgba(0,0,0,0.04),inset_0_1px_0_rgba(255,255,255,0.8)] dark:shadow-none backdrop-blur-md transition-all cursor-pointer active:scale-[0.99] disabled:opacity-60"
         >
           {/* Official 4-color Google G icon */}
           <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -268,15 +259,15 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
       </div>
 
       {/* Glass Or Divider */}
-      <div className="relative flex items-center justify-center py-1">
+      <div className="relative flex items-center justify-center py-0.5">
         <div className="w-full border-t border-white/60 dark:border-white/10" />
-        <span className="absolute px-3 py-0.5 rounded-full text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider bg-white/70 dark:bg-zinc-900/80 backdrop-blur-md border border-white/50 dark:border-white/10">
+        <span className="absolute px-2.5 py-0.5 rounded-full text-[10px] font-bold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider bg-white/70 dark:bg-zinc-900/80 backdrop-blur-md border border-white/50 dark:border-white/10">
           yoki email orqali
         </span>
       </div>
 
       {/* Main Email / Password Form */}
-      <form onSubmit={handleSubmit} className="space-y-3">
+      <form onSubmit={handleSubmit} className="space-y-2.5">
         {/* Full Name Field (Smooth Accordion for Signup Mode) */}
         <div
           className={`transition-all duration-300 ease-in-out overflow-hidden ${
@@ -300,7 +291,7 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Masalan, Anvar"
-                className="w-full !pl-10 text-sm py-2.5 rounded-xl border border-white/80 dark:border-white/15 bg-white/55 dark:bg-white/[0.05] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[var(--primary)] focus:bg-white/85 dark:focus:bg-white/10 focus:ring-4 focus:ring-[var(--primary)]/15 transition-all"
+                className="w-full !pl-10 text-sm py-2 rounded-xl border border-white/80 dark:border-white/15 bg-white/55 dark:bg-white/[0.05] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[var(--primary)] focus:bg-white/85 dark:focus:bg-white/10 focus:ring-4 focus:ring-[var(--primary)]/15 transition-all"
                 autoComplete="name"
               />
             </div>
@@ -322,7 +313,7 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="ism@misol.uz"
-              className="w-full !pl-10 text-sm py-2.5 rounded-xl border border-white/80 dark:border-white/15 bg-white/55 dark:bg-white/[0.05] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[var(--primary)] focus:bg-white/85 dark:focus:bg-white/10 focus:ring-4 focus:ring-[var(--primary)]/15 transition-all"
+              className="w-full !pl-10 text-sm py-2 rounded-xl border border-white/80 dark:border-white/15 bg-white/55 dark:bg-white/[0.05] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[var(--primary)] focus:bg-white/85 dark:focus:bg-white/10 focus:ring-4 focus:ring-[var(--primary)]/15 transition-all"
               autoComplete="email"
             />
           </div>
@@ -355,7 +346,7 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Kamida 6 ta belgi"
-              className="w-full !pl-10 !pr-10 text-sm py-2.5 rounded-xl border border-white/80 dark:border-white/15 bg-white/55 dark:bg-white/[0.05] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[var(--primary)] focus:bg-white/85 dark:focus:bg-white/10 focus:ring-4 focus:ring-[var(--primary)]/15 transition-all"
+              className="w-full !pl-10 !pr-10 text-sm py-2 rounded-xl border border-white/80 dark:border-white/15 bg-white/55 dark:bg-white/[0.05] text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 dark:placeholder-zinc-500 backdrop-blur-md shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] focus:outline-none focus:border-[var(--primary)] focus:bg-white/85 dark:focus:bg-white/10 focus:ring-4 focus:ring-[var(--primary)]/15 transition-all"
               autoComplete={mode === "login" ? "current-password" : "new-password"}
             />
             <button
@@ -372,7 +363,7 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
         {/* Message Alert Banner */}
         {message && (
           <div
-            className={`p-3 rounded-xl border text-xs font-medium flex items-start gap-2 transition-all ${
+            className={`p-2.5 rounded-xl border text-xs font-medium flex items-start gap-2 transition-all ${
               isSuccessMessage
                 ? "bg-emerald-500/15 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 backdrop-blur-md"
                 : "bg-red-500/15 border-red-500/30 text-red-700 dark:text-red-400 backdrop-blur-md"
@@ -391,7 +382,7 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
         <button
           disabled={busy}
           type="submit"
-          className="w-full py-3 rounded-xl font-bold text-sm text-white shadow-lg shadow-orange-500/25 bg-gradient-to-r from-[var(--primary)] via-orange-600 to-amber-600 hover:from-orange-600 hover:to-amber-700 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
+          className="w-full py-2.5 rounded-xl font-bold text-sm text-white shadow-lg shadow-orange-500/25 bg-gradient-to-r from-[var(--primary)] via-orange-600 to-amber-600 hover:from-orange-600 hover:to-amber-700 active:scale-[0.99] transition-all cursor-pointer flex items-center justify-center gap-1.5 disabled:opacity-60"
         >
           {busy ? (
             <span>Iltimos, kuting…</span>
@@ -402,10 +393,20 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
             </>
           )}
         </button>
+
+        {/* ← Bosh sahifaga qaytish (Teparoq, bevosita tugma ostiga ko'chirildi) */}
+        <div className="text-center pt-0.5">
+          <Link
+            href="/"
+            className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 hover:text-[var(--primary)] hover:underline transition-colors inline-block"
+          >
+            ← Bosh sahifaga qaytish (ro‘yxatdan o‘tmasdan ko‘rish)
+          </Link>
+        </div>
       </form>
 
-      {/* Footer Navigation */}
-      <div className="pt-2 border-t border-white/50 dark:border-white/10 text-center space-y-2">
+      {/* Switch between Login and Signup */}
+      <div className="pt-2 border-t border-white/50 dark:border-white/10 text-center">
         <p className="text-xs text-zinc-600 dark:text-zinc-400">
           {mode === "login" ? "Hisobingiz yo‘qmi?" : "Allaqachon hisobingiz bormi?"}{" "}
           <button
@@ -417,15 +418,6 @@ export function AuthCard({ initialMode = "login" }: AuthCardProps) {
             {mode === "login" ? "Ro‘yxatdan o‘tish" : "Kirish"}
           </button>
         </p>
-
-        <div>
-          <Link
-            href="/"
-            className="text-[11px] text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:underline transition-colors"
-          >
-            ← Bosh sahifaga qaytish (ro‘yxatdan o‘tmasdan ko‘rish)
-          </Link>
-        </div>
       </div>
     </div>
   );

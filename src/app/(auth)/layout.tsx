@@ -4,7 +4,7 @@ import { Sparkles, ShieldCheck, Zap } from "lucide-react";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-[100dvh] flex flex-col justify-between relative overflow-x-hidden bg-[#FAF6F0] dark:bg-[#0c0a09]">
+    <div className="fixed inset-0 w-full h-[100dvh] overflow-hidden flex flex-col justify-between bg-[#FAF6F0] dark:bg-[#0c0a09] select-none">
       {/* =========================================================================
           BACKGROUND ANIMATED VIDEOS (Responsive: Desktop vs Mobile)
           ========================================================================= */}
@@ -40,7 +40,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* =========================================================================
           TOP BRAND HEADER BAR
           ========================================================================= */}
-      <header className="w-full px-5 sm:px-8 py-3 flex items-center justify-between relative z-10 border-b border-black/5 dark:border-white/10 bg-white/40 dark:bg-[#121214]/60 backdrop-blur-md">
+      <header className="w-full px-5 sm:px-8 py-2.5 shrink-0 flex items-center justify-between relative z-10 border-b border-black/5 dark:border-white/10 bg-white/40 dark:bg-[#121214]/60 backdrop-blur-md">
         <Link href="/" className="inline-flex items-center gap-2.5 group">
           <img
             src="/logo.png"
@@ -59,33 +59,38 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
 
       {/* =========================================================================
           MAIN AUTH SECTION
-          On Desktop: 3D book visible on left, auth card cleanly on right
-          On Mobile: 3D book visible at top, auth card centered smoothly with no scroll jumps
+          Strictly Non-Scrollable (fixed within 100dvh)
           ========================================================================= */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-3 sm:py-6 flex flex-col justify-center relative z-10">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 flex items-center justify-between relative z-10 overflow-hidden">
         <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-8 my-auto">
           
-          {/* Desktop Left Decorative Corner Info (Bottom left, leaves the 3D book 100% visible) */}
-          <div className="hidden lg:flex flex-col justify-end max-w-sm space-y-3 select-none self-end mb-4">
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 dark:bg-white/10 backdrop-blur-md border border-[var(--primary)]/30 text-[var(--primary)] text-xs font-bold w-fit shadow-xs">
+          {/* Desktop Left Info: Elevated nicely above footer, sitting gracefully below the 3D book */}
+          <div className="hidden lg:flex flex-col justify-end max-w-md space-y-2.5 select-none self-end mb-8 pb-2">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/70 dark:bg-white/10 backdrop-blur-md border border-[var(--primary)]/30 text-[var(--primary)] text-xs font-bold w-fit shadow-xs">
               <Sparkles className="w-3.5 h-3.5 animate-pulse text-[var(--primary)]" />
-              <span>AI Bilan Kuchaytirilgan Platforma</span>
+              <span>10,000+ IELTS O‘quvchilari Tanlovi</span>
             </div>
-            <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 leading-relaxed drop-shadow-xs">
-              Orzuingizdagi Band 7.5+ natijaga erishish uchun Cambridge mocklar va individual AI tahlili.
+            
+            <p className="text-base font-extrabold text-zinc-900 dark:text-zinc-50 tracking-tight leading-snug drop-shadow-xs">
+              IELTS <span className="text-[var(--primary)]">7.5+</span> natijasiga aqlli va tizimli tayyorgarlik.
             </p>
-            <div className="flex items-center gap-4 text-xs font-semibold text-zinc-600 dark:text-zinc-400 pt-1">
-              <span className="inline-flex items-center gap-1.5">
-                <Zap className="w-3.5 h-3.5 text-amber-500" /> Tezkor AI tahlil
+            
+            <p className="text-xs font-medium text-zinc-600 dark:text-zinc-300 leading-relaxed drop-shadow-xs max-w-sm">
+              Cambridge rasmiy mock testlari, AI orqali Writing va Speaking tahlili hamda doimiy o‘sish ko‘rsatkichlari.
+            </p>
+            
+            <div className="flex flex-wrap items-center gap-2 text-xs font-semibold text-zinc-700 dark:text-zinc-300 pt-0.5">
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/60 dark:bg-white/5 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-xs text-[11px]">
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Cambridge 10-19 Mocklar
               </span>
-              <span className="inline-flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" /> Cambridge Mocklar
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-white/60 dark:bg-white/5 backdrop-blur-md border border-black/5 dark:border-white/10 shadow-xs text-[11px]">
+                <Zap className="w-3.5 h-3.5 text-amber-500" /> Tezkor AI Baholash
               </span>
             </div>
           </div>
 
-          {/* Right/Center Column: Auth Card (Centered smoothly without overflowing screen height) */}
-          <div className="w-full max-w-[420px] mx-auto lg:mx-0 lg:ml-auto">
+          {/* Right/Center Column: Auth Card (Super compact, strictly non-overflowing) */}
+          <div className="w-full max-w-[400px] mx-auto lg:mx-0 lg:ml-auto">
             {children}
           </div>
 
@@ -95,7 +100,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* =========================================================================
           BOTTOM FOOTER
           ========================================================================= */}
-      <footer className="w-full py-2.5 px-6 text-center text-xs text-zinc-500 dark:text-zinc-400 relative z-10 border-t border-black/5 dark:border-white/10 bg-white/30 dark:bg-[#121214]/50 backdrop-blur-md">
+      <footer className="w-full py-2.5 px-6 shrink-0 text-center text-xs text-zinc-500 dark:text-zinc-400 relative z-10 border-t border-black/5 dark:border-white/10 bg-white/30 dark:bg-[#121214]/50 backdrop-blur-md">
         © 2026 lumoielts.uz • Lumo IELTS Platformasi
       </footer>
     </div>
