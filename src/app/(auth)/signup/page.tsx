@@ -1,4 +1,4 @@
-import { SignupForm } from "@/components/auth/signup-form";
+import { AuthCard } from "@/components/auth/auth-card";
 
 export const metadata = {
   title: "Ro‘yxatdan o‘tish | lumoielts.uz",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function SignupPage() {
-  return <SignupForm />;
+  return <AuthCard initialMode="signup" />;
 }

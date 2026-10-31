@@ -4,7 +4,7 @@ import { Sparkles, ShieldCheck, Zap } from "lucide-react";
 
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="min-h-screen flex flex-col justify-between relative overflow-x-hidden bg-[#FAF6F0] dark:bg-[#0c0a09]">
+    <div className="min-h-[100dvh] flex flex-col justify-between relative overflow-x-hidden bg-[#FAF6F0] dark:bg-[#0c0a09]">
       {/* =========================================================================
           BACKGROUND ANIMATED VIDEOS (Responsive: Desktop vs Mobile)
           ========================================================================= */}
@@ -40,7 +40,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* =========================================================================
           TOP BRAND HEADER BAR
           ========================================================================= */}
-      <header className="w-full px-5 sm:px-8 py-3.5 flex items-center justify-between relative z-10 border-b border-black/5 dark:border-white/10 bg-white/40 dark:bg-[#121214]/60 backdrop-blur-md">
+      <header className="w-full px-5 sm:px-8 py-3 flex items-center justify-between relative z-10 border-b border-black/5 dark:border-white/10 bg-white/40 dark:bg-[#121214]/60 backdrop-blur-md">
         <Link href="/" className="inline-flex items-center gap-2.5 group">
           <img
             src="/logo.png"
@@ -60,13 +60,13 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* =========================================================================
           MAIN AUTH SECTION
           On Desktop: 3D book visible on left, auth card cleanly on right
-          On Mobile: 3D book visible at top, auth card centered below
+          On Mobile: 3D book visible at top, auth card centered smoothly with no scroll jumps
           ========================================================================= */}
-      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-6 sm:py-8 flex flex-col justify-center relative z-10">
-        <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-8">
+      <main className="flex-1 w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-12 py-3 sm:py-6 flex flex-col justify-center relative z-10">
+        <div className="w-full flex flex-col lg:flex-row items-center justify-between gap-8 my-auto">
           
           {/* Desktop Left Decorative Corner Info (Bottom left, leaves the 3D book 100% visible) */}
-          <div className="hidden lg:flex flex-col justify-end max-w-sm space-y-3.5 select-none self-end pb-6">
+          <div className="hidden lg:flex flex-col justify-end max-w-sm space-y-3 select-none self-end mb-4">
             <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-white/70 dark:bg-white/10 backdrop-blur-md border border-[var(--primary)]/30 text-[var(--primary)] text-xs font-bold w-fit shadow-xs">
               <Sparkles className="w-3.5 h-3.5 animate-pulse text-[var(--primary)]" />
               <span>AI Bilan Kuchaytirilgan Platforma</span>
@@ -84,8 +84,8 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             </div>
           </div>
 
-          {/* Right/Center Column: Auth Card (Offset on mobile to showcase the 3D animated book) */}
-          <div className="w-full max-w-[430px] mx-auto lg:mx-0 lg:ml-auto mt-24 sm:mt-20 lg:mt-0 pb-8 lg:pb-0">
+          {/* Right/Center Column: Auth Card (Centered smoothly without overflowing screen height) */}
+          <div className="w-full max-w-[420px] mx-auto lg:mx-0 lg:ml-auto">
             {children}
           </div>
 
@@ -95,7 +95,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       {/* =========================================================================
           BOTTOM FOOTER
           ========================================================================= */}
-      <footer className="w-full py-3.5 px-6 text-center text-xs text-zinc-500 dark:text-zinc-400 relative z-10 border-t border-black/5 dark:border-white/10 bg-white/30 dark:bg-[#121214]/50 backdrop-blur-md">
+      <footer className="w-full py-2.5 px-6 text-center text-xs text-zinc-500 dark:text-zinc-400 relative z-10 border-t border-black/5 dark:border-white/10 bg-white/30 dark:bg-[#121214]/50 backdrop-blur-md">
         © 2026 lumoielts.uz • Lumo IELTS Platformasi
       </footer>
     </div>

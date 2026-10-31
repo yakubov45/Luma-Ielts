@@ -1,4 +1,4 @@
-import { LoginForm } from "@/components/auth/login-form";
+import { AuthCard } from "@/components/auth/auth-card";
 
 export const metadata = {
   title: "Kirish | lumoielts.uz",
@@ -6,5 +6,5 @@ export const metadata = {
 };
 
 export default function LoginPage() {
-  return <LoginForm />;
+  return <AuthCard initialMode="login" />;
 }
