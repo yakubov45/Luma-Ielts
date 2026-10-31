@@ -572,104 +572,151 @@ export function ReadingWorkspace() {
             </p>
           )}
 
-        {uniqueOptions ? (
-          <div className="space-y-2 pt-1">
-            {uniqueOptions.map((o, optIdx) => {
-              const isSelected = answers[q.id] === o.id;
-              const cleanText = o.text
-                .replace(
-                  new RegExp(`^(?:\\(?${o.id}\\)?[\\s\\:\\.\\—\\-]+|${o.id}\\s+)`, "i"),
-                  ""
-                )
-                .trim();
-              return (
-                <div
-                  key={`opt-${q.id}-${o.id}-${optIdx}`}
-                  onClick={() => setAnswers({ ...answers, [q.id]: o.id })}
-                  className={`group flex items-start gap-3 px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer select-none text-xs md:text-sm ${
-                    isSelected
-                      ? "bg-[var(--nav-active-bg)] border-[var(--primary)] ring-1 ring-[var(--primary)]/30 shadow-xs"
-                      : "bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--surface-subtle)] hover:border-[var(--secondary)]/40"
-                  }`}
-                >
-                  {/* Compact Letter Badge & Radio Indicator */}
-                  <div className="flex items-center gap-2 pt-0.5 shrink-0">
-                    <span
-                      className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-colors ${
-                        isSelected
-                          ? "bg-[var(--primary)] text-white shadow-xs"
-                          : "bg-[var(--surface-subtle)] border border-[var(--border)] text-[var(--secondary)] group-hover:text-[var(--foreground)]"
-                      }`}
-                    >
-                      {o.id.toUpperCase()}
-                    </span>
-                    <span
-                      className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
-                        isSelected
-                          ? "border-[var(--primary)] bg-[var(--surface)]"
-                          : "border-[var(--muted)]/40 bg-[var(--surface)] group-hover:border-[var(--muted)]"
-                      }`}
-                    >
-                      {isSelected && (
-                        <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
-                      )}
-                    </span>
-                  </div>
+        {(() => {
+          const isTfngOrYesNo =
+            q.type.toLowerCase().includes("true") ||
+            q.type.toLowerCase().includes("tfng") ||
+            q.type.toLowerCase().includes("yes") ||
+            (uniqueOptions &&
+              uniqueOptions.length <= 3 &&
+              uniqueOptions.some((o) => /^(true|false|not_given|yes|no)$/i.test(o.id)));
 
-                  {/* Option text */}
-                  <span
-                    className={`flex-1 leading-snug pt-0.5 ${
-                      isSelected
-                        ? "font-semibold text-[var(--foreground)]"
-                        : "text-[var(--foreground)]"
-                    }`}
-                  >
-                    {cleanText}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-        ) : q.type.includes("true") || q.type.includes("True") ? (
-          <div className="grid grid-cols-3 gap-2 pt-1">
-            {[
-              { val: "true", label: "True" },
-              { val: "false", label: "False" },
-              { val: "not given", label: "Not Given" },
-            ].map((opt) => {
-              const isSelected = (answers[q.id] || "").toLowerCase() === opt.val;
-              return (
-                <button
-                  key={`tf-${q.id}-${opt.val}`}
-                  type="button"
-                  onClick={() => setAnswers({ ...answers, [q.id]: opt.val })}
-                  className={`py-2 px-2.5 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                    isSelected
-                      ? "bg-[var(--nav-active-bg)] border-[var(--primary)] text-[var(--primary)] shadow-xs ring-1 ring-[var(--primary)]/30"
-                      : "bg-[var(--surface)] border-[var(--border)] text-[var(--secondary)] hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)]"
-                  }`}
-                >
-                  <span
-                    className={`w-2 h-2 rounded-full ${
-                      isSelected
-                        ? "bg-[var(--primary)]"
-                        : "border border-[var(--muted)] bg-transparent"
-                    }`}
-                  />
-                  <span>{opt.label}</span>
-                </button>
-              );
-            })}
-          </div>
-        ) : (
-          <input
-            aria-label={q.prompt}
-            value={answers[q.id] ?? ""}
-            onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
-            placeholder={q.wordLimit ? `${q.wordLimit} so‘zdan oshmasin` : "Javobingizni yozing"}
-            className="w-full text-xs md:text-sm mt-1"
-          />
-        )}
+          if (isTfngOrYesNo) {
+            const tfOptions =
+              uniqueOptions ||
+              (q.type.toLowerCase().includes("yes")
+                ? [
+                    { id: "yes", text: "YES" },
+                    { id: "no", text: "NO" },
+                    { id: "not_given", text: "NOT GIVEN" },
+                  ]
+                : [
+                    { id: "true", text: "TRUE" },
+                    { id: "false", text: "FALSE" },
+                    { id: "not_given", text: "NOT GIVEN" },
+                  ]);
+
+            return (
+              <div className="grid grid-cols-3 gap-2 sm:gap-3 pt-1">
+                {tfOptions.map((opt) => {
+                  const optId = opt.id;
+                  const isSelected = (answers[q.id] || "").toLowerCase() === optId.toLowerCase();
+                  const displayLabel = (opt.text || opt.id).replace(/_/g, " ").toUpperCase();
+                  return (
+                    <button
+                      key={`tf-${q.id}-${opt.id}`}
+                      type="button"
+                      onClick={() => setAnswers({ ...answers, [q.id]: opt.id })}
+                      className={`py-3 px-2 sm:px-3 rounded-xl text-xs sm:text-sm font-bold border transition-all cursor-pointer flex flex-col sm:flex-row items-center justify-center gap-1.5 sm:gap-2 select-none ${
+                        isSelected
+                          ? "bg-[var(--nav-active-bg)] border-2 border-[var(--primary)] text-[var(--primary)] shadow-sm ring-1 ring-[var(--primary)]/20 font-black"
+                          : "bg-[var(--surface)] border border-[var(--border)] text-[var(--secondary)] hover:bg-[var(--surface-subtle)] hover:text-[var(--foreground)] hover:border-[var(--muted)]"
+                      }`}
+                    >
+                      <span
+                        className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 transition-all ${
+                          isSelected
+                            ? "border-[var(--primary)] bg-[var(--surface)]"
+                            : "border-[var(--muted)]/50 bg-[var(--surface)]"
+                        }`}
+                      >
+                        {isSelected && (
+                          <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
+                        )}
+                      </span>
+                      <span className="text-center tracking-tight leading-tight whitespace-nowrap overflow-hidden text-ellipsis">
+                        {displayLabel}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            );
+          }
+
+          if (uniqueOptions) {
+            return (
+              <div className="space-y-2 pt-1">
+                {uniqueOptions.map((o, optIdx) => {
+                  const isSelected = answers[q.id] === o.id;
+                  const isLetterBadge =
+                    /^[A-Z0-9]{1,2}$/i.test(o.id) ||
+                    /^(i|ii|iii|iv|v|vi|vii|viii|ix|x)$/i.test(o.id);
+                  const cleanText =
+                    o.text
+                      .replace(
+                        new RegExp(`^(?:\\(?${o.id}\\)?[\\s\\:\\.\\—\\-]+|${o.id}\\s+)`, "i"),
+                        ""
+                      )
+                      .trim() ||
+                    o.text ||
+                    o.id;
+                  return (
+                    <div
+                      key={`opt-${q.id}-${o.id}-${optIdx}`}
+                      onClick={() => setAnswers({ ...answers, [q.id]: o.id })}
+                      className={`group flex items-start gap-3 px-3.5 py-2.5 rounded-xl border transition-all cursor-pointer select-none text-xs md:text-sm ${
+                        isSelected
+                          ? "bg-[var(--nav-active-bg)] border-[var(--primary)] ring-1 ring-[var(--primary)]/30 shadow-xs"
+                          : "bg-[var(--surface)] border-[var(--border)] hover:bg-[var(--surface-subtle)] hover:border-[var(--secondary)]/40"
+                      }`}
+                    >
+                      {/* Compact Letter Badge & Radio Indicator */}
+                      <div className="flex items-center gap-2 pt-0.5 shrink-0">
+                        {isLetterBadge && (
+                          <span
+                            className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center transition-colors ${
+                              isSelected
+                                ? "bg-[var(--primary)] text-white shadow-xs"
+                                : "bg-[var(--surface-subtle)] border border-[var(--border)] text-[var(--secondary)] group-hover:text-[var(--foreground)]"
+                            }`}
+                          >
+                            {o.id.toUpperCase()}
+                          </span>
+                        )}
+                        <span
+                          className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center transition-all ${
+                            isSelected
+                              ? "border-[var(--primary)] bg-[var(--surface)]"
+                              : "border-[var(--muted)]/40 bg-[var(--surface)] group-hover:border-[var(--muted)]"
+                          }`}
+                        >
+                          {isSelected && (
+                            <span className="w-1.5 h-1.5 rounded-full bg-[var(--primary)]" />
+                          )}
+                        </span>
+                      </div>
+
+                      {/* Option text */}
+                      <span
+                        className={`flex-1 leading-snug pt-0.5 ${
+                          isSelected
+                            ? "font-semibold text-[var(--foreground)]"
+                            : "text-[var(--foreground)]"
+                        }`}
+                      >
+                        {cleanText}
+                      </span>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          }
+
+          return (
+            <input
+              type="text"
+              id={`input-${q.id}`}
+              name={`input-${q.id}`}
+              aria-label={`Savol ${item.globalNum} uchun javobingiz`}
+              placeholder="Javobingizni yozing..."
+              value={answers[q.id] || ""}
+              onChange={(e) => setAnswers({ ...answers, [q.id]: e.target.value })}
+              className="w-full text-xs md:text-sm p-3 rounded-xl border border-[var(--border)] bg-[var(--surface)] text-[var(--foreground)] focus:border-[var(--primary)] focus:ring-1 focus:ring-[var(--primary)] transition-all font-medium"
+            />
+          );
+        })()}
 
         {/* Answer Confidence Tracking */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2.5 border-t border-[var(--border)] text-xs">

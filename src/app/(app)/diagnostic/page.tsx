@@ -159,15 +159,17 @@ export default function DiagnosticPage() {
                   }`}
                 >
                   <div className="flex items-center gap-3">
-                    <span
-                      className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 ${
-                        isSelected
-                          ? "bg-[var(--primary)] text-white"
-                          : "bg-[var(--surface-subtle)] text-[var(--muted)] border border-[var(--border)]"
-                      }`}
-                    >
-                      {opt.id}
-                    </span>
+                    {opt.id.length <= 2 && (
+                      <span
+                        className={`w-6 h-6 rounded-lg text-xs font-bold flex items-center justify-center shrink-0 ${
+                          isSelected
+                            ? "bg-[var(--primary)] text-white"
+                            : "bg-[var(--surface-subtle)] text-[var(--muted)] border border-[var(--border)]"
+                        }`}
+                      >
+                        {opt.id}
+                      </span>
+                    )}
                     <span>{opt.text}</span>
                   </div>
                   {isSelected && <Check className="w-4 h-4 text-[var(--primary)] shrink-0" />}
