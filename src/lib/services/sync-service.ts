@@ -106,9 +106,40 @@ export async function syncGuestDataToAccount(uid: string): Promise<{
           localStorage.setItem(userKey2, writing.task2Draft);
         }
       }
+
+      // 6. Migrate Guest Questionnaire Preferences if present
+      try {
+        const rawPrefs = localStorage.getItem("ielts_focus_questionnaire_preferences");
+        if (rawPrefs) {
+          const parsed = JSON.parse(rawPrefs);
+          const numericTarget =
+            parsed.targetBand === "8.0+"
+              ? 8.0
+              : parsed.targetBand === "not_sure"
+              ? null
+              : parseFloat(parsed.targetBand) || 6.5;
+
+          await setDoc(
+            doc(db, "users", uid),
+            {
+              targetBand: numericTarget,
+              dailyStudyMinutes: parsed.dailyStudyMinutes || 30,
+              examDate: parsed.examDate || null,
+              timezone: parsed.timezone || Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tashkent",
+              onboardingCompleted: true,
+              questionnaire: parsed,
+              studyPlanPreferences: parsed,
+              updatedAt: Date.now(),
+            },
+            { merge: true }
+          );
+        }
+      } catch (prefErr) {
+        console.warn("Could not sync guest questionnaire to Firestore:", prefErr);
+      }
     }
 
-    // 6. All writes succeeded without network failure: safely clear guest caches
+    // 7. All writes succeeded without network failure: safely clear guest caches
     clearGuestAttempts();
     clearGuestVocabulary();
     clearGuestMistakes();
@@ -145,5 +176,8 @@ export function clearSessionDataOnSignOut() {
     clearGuestVocabulary();
     clearGuestMistakes();
     clearGuestWriting();
+    localStorage.removeItem("ielts_focus_onboarding_draft");
+    localStorage.removeItem("ielts_focus_questionnaire_preferences");
+    localStorage.removeItem("ielts_focus_onboarding_completed");
   } catch {}
 }

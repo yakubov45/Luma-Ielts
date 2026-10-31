@@ -4,11 +4,18 @@ import type { User } from "firebase/auth";
 import { doc, getDoc, serverTimestamp, setDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/client";
 
-export async function ensureUserProfile(user: User) {
+export async function ensureUserProfile(user: User): Promise<{ isNew: boolean; onboardingCompleted: boolean }> {
   try {
     const ref = doc(db, "users", user.uid);
     const existing = await getDoc(ref);
-    if (existing.exists()) return;
+    if (existing.exists()) {
+      const data = existing.data();
+      return {
+        isNew: false,
+        onboardingCompleted: Boolean(data?.onboardingCompleted),
+      };
+    }
+
     await setDoc(ref, {
       displayName: user.displayName || "IELTS learner",
       email: user.email || "",
@@ -18,10 +25,14 @@ export async function ensureUserProfile(user: User) {
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tashkent",
       locale: "uz",
       preferences: { theme: "system" },
+      onboardingCompleted: false,
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
     });
+
+    return { isNew: true, onboardingCompleted: false };
   } catch (error) {
     console.warn("ensureUserProfile: Firestore sync deferred or denied:", error);
+    return { isNew: false, onboardingCompleted: false };
   }
 }

@@ -86,7 +86,7 @@ export function SignupForm() {
       }
 
       setSuccess(true);
-      router.push("/dashboard");
+      router.push("/onboarding");
     } catch (error) {
       console.error("Signup failure", { stage, error });
       setMessage(friendlyError(error, stage));
@@ -100,9 +100,13 @@ export function SignupForm() {
     setMessage("");
     try {
       const credential = await signInWithPopup(auth, new GoogleAuthProvider());
-      await ensureUserProfile(credential.user);
+      const profileStatus = await ensureUserProfile(credential.user);
       await syncGuestDataToAccount(credential.user.uid);
-      router.push("/dashboard");
+      if (profileStatus.isNew || !profileStatus.onboardingCompleted) {
+        router.push("/onboarding");
+      } else {
+        router.push("/dashboard");
+      }
     } catch (error) {
       console.error("Google sign-in error:", error);
       setMessage(friendlyError(error, "Google sign-in"));

@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "test": "node scripts/test-new-functions.mjs",
+    "test": "node scripts/test-new-functions.mjs && node scripts/test-study-plan.mjs",
     "seed:reading": "node scripts/seed-reading.mjs",
     "seed:speaking": "node scripts/seed-speaking.mjs",
     "seed:passages": "node scripts/seed-reading-passages.mjs"

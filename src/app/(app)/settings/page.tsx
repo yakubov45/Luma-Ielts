@@ -50,10 +50,13 @@ export default function SettingsPage() {
     e.preventDefault();
     setErrorMessage("");
 
+    const numericTargetBand =
+      targetBand === "8.0+" ? 8.0 : targetBand === "not_sure" ? null : parseFloat(targetBand) || 7.0;
+
     const updatePayload = {
-      targetBand: parseFloat(targetBand) || 7.0,
+      targetBand: numericTargetBand,
       dailyStudyMinutes: parseInt(dailyMinutes, 10) || 30,
-      examDate,
+      examDate: examDate || null,
       timezone,
       displayName: displayName.trim() || user?.displayName || "O‘quvchi",
       updatedAt: serverTimestamp(),
@@ -98,6 +101,24 @@ export default function SettingsPage() {
         </div>
       ) : (
         <form onSubmit={handleSave} className="card p-6 md:p-8 space-y-5">
+          {/* Onboarding Re-run Banner */}
+          <div className="p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <p className="text-xs font-bold text-orange-950 dark:text-orange-200">
+                To‘liq o‘quv so‘rovnomasini qayta topshirish
+              </p>
+              <p className="text-[11px] text-orange-800 dark:text-orange-300 mt-0.5">
+                Barcha 8 ta savolga javob berib, haftalik rejangizni avtomatik yangilang.
+              </p>
+            </div>
+            <a
+              href="/onboarding"
+              className="btn-primary text-xs !py-1.5 !px-3 whitespace-nowrap self-start sm:self-center"
+            >
+              So‘rovnomani o‘tish
+            </a>
+          </div>
+
           {saved && (
             <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
@@ -131,11 +152,13 @@ export default function SettingsPage() {
                 onChange={(e) => setTargetBand(e.target.value)}
                 className="w-full mt-1"
               >
+                <option value="5.5">Band 5.5</option>
+                <option value="6.0">Band 6.0</option>
                 <option value="6.5">Band 6.5 (Competent Learner)</option>
                 <option value="7.0">Band 7.0 (Good User)</option>
                 <option value="7.5">Band 7.5 (Academic Excellence)</option>
-                <option value="8.0">Band 8.0 (Very Good User)</option>
-                <option value="8.5">Band 8.5 (Near Native)</option>
+                <option value="8.0+">Band 8.0+ (Superior User)</option>
+                <option value="not_sure">Hozircha aniq emas</option>
               </select>
             </label>
 
@@ -150,6 +173,7 @@ export default function SettingsPage() {
                 <option value="30">30 daqiqa (Tavsiya etiladi)</option>
                 <option value="45">45 daqiqa (Intensiv)</option>
                 <option value="60">60 daqiqa (Exam Sprint)</option>
+                <option value="90">90 daqiqa (Maksimal)</option>
               </select>
             </label>
 

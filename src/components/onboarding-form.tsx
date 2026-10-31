@@ -1,7 +1,7 @@
 "use client";
-import { doc, serverTimestamp, updateDoc } from "firebase/firestore";
-import { FormEvent, useState } from "react";
-import { useRouter } from "next/navigation";
-import { db } from "@/lib/firebase/client";
-import { useAuth } from "@/components/auth/auth-provider";
-export function OnboardingForm() { const router = useRouter(); const { user } = useAuth(); const [band, setBand] = useState("6"); const [date, setDate] = useState(""); const [minutes, setMinutes] = useState("30"); const [locale, setLocale] = useState("uz"); const [message, setMessage] = useState(""); async function submit(e: FormEvent) { e.preventDefault(); if (!user) return; await updateDoc(doc(db,"users",user.uid), { targetBand:Number(band), examDate:date || null, dailyStudyMinutes:Number(minutes), timezone:Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tashkent", locale, updatedAt:serverTimestamp() }); setMessage("Sozlamalar saqlandi."); window.setTimeout(() => router.push("/dashboard"), 500); } return <form onSubmit={submit} className="card space-y-4"><p>Joriy bandingiz o‘zingiz bergan baho; bu o‘lchangan natija emas.</p><label>Maqsad bandi<select value={band} onChange={e=>setBand(e.target.value)}>{[5,5.5,6,6.5,7,7.5,8,8.5,9].map(x=><option key={x}>{x}</option>)}</select></label><label>Imtihon sanasi (ixtiyoriy)<input type="date" value={date} onChange={e=>setDate(e.target.value)} /></label><label>Kunlik vaqt (daqiqa)<input type="number" min="10" max="360" value={minutes} onChange={e=>setMinutes(e.target.value)} /></label><label>Interfeys tili<select value={locale} onChange={e=>setLocale(e.target.value)}><option value="uz">O‘zbekcha</option><option value="en">English</option></select></label><button className="button">Davom etish</button>{message && <p role="status">{message}</p>}</form>; }
+
+import { OnboardingWizard } from "@/components/onboarding/onboarding-wizard";
+
+export function OnboardingForm() {
+  return <OnboardingWizard />;
+}

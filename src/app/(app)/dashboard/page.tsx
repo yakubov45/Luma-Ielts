@@ -336,32 +336,43 @@ export default function DashboardPage() {
             <div className="card p-6 space-y-4">
               <div className="flex items-center justify-between border-b border-[var(--border)] pb-3">
                 <h3 className="font-bold text-base text-[var(--foreground)]">Bugungi Reja</h3>
-                <span className="text-xs text-[var(--muted)]">30 daqiqa</span>
+                <span className="text-xs text-[var(--muted)] font-semibold">
+                  {studyPlan?.isRestDay ? "Dam olish kuni" : `${studyPlan?.totalMinutes || 0} daqiqa`}
+                </span>
               </div>
 
-              <div className="space-y-3">
-                {studyPlan?.tasks.map((task, idx) => (
-                  <Link
-                    key={task.id}
-                    href={task.link}
-                    className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] hover:border-[var(--primary)] transition-colors block"
-                  >
-                    <div className="w-6 h-6 rounded-md bg-[var(--surface)] text-[var(--primary)] font-bold text-xs flex items-center justify-center border border-[var(--border)] shrink-0">
-                      {task.completed ? "✓" : idx + 1}
-                    </div>
-                    <div className="overflow-hidden min-w-0">
-                      <p
-                        className={`text-xs font-bold text-[var(--foreground)] truncate ${
-                          task.completed ? "line-through text-[var(--muted)]" : ""
-                        }`}
-                      >
-                        {task.title}
-                      </p>
-                      <p className="text-[11px] text-[var(--muted)]">{task.duration} daqiqa</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+              {studyPlan?.isRestDay ? (
+                <div className="p-4 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] text-center space-y-1">
+                  <p className="text-xs font-bold text-[var(--foreground)]">Bugun Dam Olish Kuni</p>
+                  <p className="text-[11px] text-[var(--muted)]">
+                    Haftalik jadvalingiz bo‘yicha bugun o‘qish kuni emas.
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {studyPlan?.tasks.map((task, idx) => (
+                    <Link
+                      key={task.id}
+                      href={task.link}
+                      className="flex items-center gap-3 p-3 rounded-xl bg-[var(--surface-subtle)] border border-[var(--border)] hover:border-[var(--primary)] transition-colors block"
+                    >
+                      <div className="w-6 h-6 rounded-md bg-[var(--surface)] text-[var(--primary)] font-bold text-xs flex items-center justify-center border border-[var(--border)] shrink-0">
+                        {task.completed ? "✓" : idx + 1}
+                      </div>
+                      <div className="overflow-hidden min-w-0">
+                        <p
+                          className={`text-xs font-bold text-[var(--foreground)] truncate ${
+                            task.completed ? "line-through text-[var(--muted)]" : ""
+                          }`}
+                        >
+                          {task.title}
+                        </p>
+                        <p className="text-[11px] text-[var(--muted)]">{task.duration} daqiqa</p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              )}
 
               <Link
                 href="/study-plan"

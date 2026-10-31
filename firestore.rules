@@ -6,18 +6,18 @@ service cloud.firestore {
     function admin() { return signedIn() && request.auth.token.admin == true; }
     function allowedProfileKeys() {
       return request.resource.data.diff(resource.data).affectedKeys()
-        .hasOnly(['displayName', 'targetBand', 'examDate', 'dailyStudyMinutes', 'timezone', 'locale', 'preferences', 'updatedAt']);
+        .hasOnly(['displayName', 'targetBand', 'examDate', 'dailyStudyMinutes', 'timezone', 'locale', 'preferences', 'updatedAt', 'onboardingCompleted', 'questionnaire', 'studyPlanPreferences']);
     }
 
     match /users/{uid} {
-      allow create: if owner(uid) && request.resource.data.keys().hasOnly(['displayName', 'email', 'targetBand', 'examDate', 'dailyStudyMinutes', 'timezone', 'locale', 'preferences', 'createdAt', 'updatedAt']);
+      allow create: if owner(uid) && request.resource.data.keys().hasOnly(['displayName', 'email', 'targetBand', 'examDate', 'dailyStudyMinutes', 'timezone', 'locale', 'preferences', 'createdAt', 'updatedAt', 'onboardingCompleted', 'questionnaire', 'studyPlanPreferences']);
       allow read: if owner(uid);
       allow update: if owner(uid) && allowedProfileKeys();
       allow delete: if false;
 
       match /{privateCollection}/{document=**} {
         allow read, write: if owner(uid)
-          && privateCollection in ['annotations', 'vocabulary', 'reviewEvents', 'mistakes', 'studyDays', 'recordings'];
+          && privateCollection in ['annotations', 'vocabulary', 'reviewEvents', 'mistakes', 'studyDays', 'recordings', 'studyPlan', 'questionnaire'];
       }
       match /attempts/{attemptId} {
         allow read: if owner(uid);
