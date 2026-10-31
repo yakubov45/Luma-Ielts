@@ -10,11 +10,15 @@ export default function Home() {
       {/* Top Header */}
       <header className="sticky top-0 z-20 border-b border-[var(--border)] bg-[var(--surface)] px-4 md:px-8 py-3.5 flex items-center justify-between">
         <div className="flex items-center gap-6">
-          <Link href="/" className="flex items-center gap-2 font-black text-lg tracking-tight text-[var(--foreground)]">
-            <div className="w-8 h-8 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm shadow-sm">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <span>IELTS Focus</span>
+          <Link href="/" className="flex items-center gap-2.5 font-black text-lg tracking-tight text-[var(--foreground)]">
+            <img
+              src="/logo.png"
+              alt="Lumo IELTS"
+              className="w-8 h-8 rounded-xl object-contain shadow-xs shrink-0"
+            />
+            <span className="font-extrabold text-lg tracking-tight text-[var(--foreground)]">
+              lumo<span className="text-[var(--primary)]">ielts</span><span className="text-xs text-[var(--muted)] font-bold">.uz</span>
+            </span>
           </Link>
           <nav className="hidden md:flex items-center gap-5 text-sm font-semibold text-[var(--secondary)]">
             <Link href="/reading" className="hover:text-[var(--primary)] transition-colors">
@@ -62,7 +66,7 @@ export default function Home() {
         </h1>
 
         <p className="text-base md:text-lg text-[var(--secondary)] max-w-2xl mx-auto leading-relaxed">
-          IELTS Focus — xatoni chuqur tahlil qilish, intervalli so‘z yodlash va rasmiy formatdagi
+          Lumo IELTS (lumoielts.uz) — xatoni chuqur tahlil qilish, intervalli so‘z yodlash va rasmiy formatdagi
           akademik mashqlar maydoni. Saytni erkin kezishingiz mumkin; ro‘yxatdan o‘tish — faqat xohishingizga ko‘ra.
         </p>
 
@@ -259,7 +263,7 @@ export default function Home() {
 
       {/* Footer */}
       <footer className="mt-auto border-t border-[var(--border)] py-8 px-4 text-center text-xs text-[var(--muted)]">
-        <p>© 2026 IELTS Focus. Warm white & deep orange design system.</p>
+        <p>© 2026 lumoielts.uz. Lumo IELTS platformasi.</p>
         <p className="mt-1">Tinch, qulay va xavfsiz akademik o‘quv platformasi.</p>
       </footer>
     </div>

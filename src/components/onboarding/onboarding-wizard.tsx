@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   TargetBandOption,
   LevelSourceOption,
@@ -145,6 +146,23 @@ export function OnboardingWizard() {
 
   return (
     <div className="max-w-2xl mx-auto py-6 px-4 sm:px-6">
+      {/* Brand Header */}
+      <div className="flex items-center justify-between mb-5 pb-3 border-b border-[var(--border)]">
+        <Link href="/" className="inline-flex items-center gap-2 group">
+          <img
+            src="/logo.png"
+            alt="Lumo IELTS"
+            className="w-7 h-7 rounded-lg object-contain shadow-xs shrink-0"
+          />
+          <span className="font-extrabold text-base tracking-tight text-[var(--foreground)]">
+            lumo<span className="text-[var(--primary)]">ielts</span><span className="text-xs text-[var(--muted)] font-bold">.uz</span>
+          </span>
+        </Link>
+        <span className="text-xs text-[var(--muted)] font-medium hidden sm:inline">
+          O‘quv Rejasi So‘rovnomasi
+        </span>
+      </div>
+
       {/* Top Header & Progress */}
       <div className="space-y-3 mb-6">
         <div className="flex items-center justify-between">

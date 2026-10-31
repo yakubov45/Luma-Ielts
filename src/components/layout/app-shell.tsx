@@ -58,12 +58,16 @@ function SidebarContent({ onClose }: { onClose?: () => void }) {
         <Link
           href="/"
           onClick={onClose}
-          className="flex items-center gap-2.5 font-black text-lg tracking-tight text-[var(--foreground)]"
+          className="flex items-center gap-2.5 font-black text-lg tracking-tight text-[var(--foreground)] group"
         >
-          <div className="w-8 h-8 rounded-lg bg-[var(--primary)] text-white flex items-center justify-center font-bold text-sm shadow-sm">
-            <Sparkles className="w-4 h-4" />
-          </div>
-          <span>IELTS Focus</span>
+          <img
+            src="/logo.png"
+            alt="Lumo IELTS"
+            className="w-8 h-8 rounded-xl object-contain shadow-xs shrink-0"
+          />
+          <span className="font-extrabold text-base tracking-tight text-[var(--foreground)]">
+            lumo<span className="text-[var(--primary)]">ielts</span><span className="text-xs text-[var(--muted)] font-bold">.uz</span>
+          </span>
         </Link>
         {onClose && (
           <button
@@ -220,7 +224,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Menu className="w-5 h-5" />
             </button>
             <h1 className="text-base md:text-lg font-bold text-[var(--foreground)] tracking-tight">
-              <Suspense fallback={<span>IELTS Focus</span>}>
+              <Suspense fallback={<span>lumoielts.uz</span>}>
                 <PageTitle />
               </Suspense>
             </h1>

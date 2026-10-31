@@ -14,7 +14,18 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
-export const metadata: Metadata = { title: "IELTS Focus", description: "A calm, secure IELTS Academic learning workspace." };
+export const metadata: Metadata = {
+  title: {
+    default: "Lumo IELTS — lumoielts.uz",
+    template: "%s | lumoielts.uz",
+  },
+  description: "Lumo IELTS: IELTS Academic va General tayyorgarligi, individual kunlik o‘quv rejasi, reading, listening, writing va speaking modullari.",
+  icons: {
+    icon: "/logo.png",
+    shortcut: "/logo.png",
+    apple: "/logo.png",
+  },
+};
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
