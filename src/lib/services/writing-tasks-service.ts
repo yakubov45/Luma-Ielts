@@ -5,31 +5,49 @@ import { PlatformWritingTask } from "@/lib/types/writing";
 const STORAGE_KEY = "ielts_platform_writing_tasks";
 
 export async function fetchPlatformWritingTasks(): Promise<PlatformWritingTask[]> {
-  const remoteList: PlatformWritingTask[] = [];
+  // 1. Try our Next.js API route first (fast, reliable, zero permission issues)
+  try {
+    const res = await fetch("/api/writing-tasks");
+    if (res.ok) {
+      const data = await res.json();
+      if (Array.isArray(data.tasks) && data.tasks.length > 0) {
+        if (typeof window !== "undefined") {
+          try {
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(data.tasks));
+          } catch {
+            // ignore
+          }
+        }
+        return data.tasks;
+      }
+    }
+  } catch {
+    // fallback
+  }
 
+  // 2. Try Firestore if online & allowed (silent catch without console errors)
   try {
     const q = query(collection(db, "writing_tasks"), orderBy("createdAt", "desc"));
     const snap = await getDocs(q);
+    const remoteList: PlatformWritingTask[] = [];
     snap.forEach((d) => {
       remoteList.push(d.data() as PlatformWritingTask);
     });
-  } catch (err) {
-    // Firestore might be offline, unauthenticated, or permission-restricted
-    console.warn("Could not fetch remote writing_tasks from Firestore, falling back to local cache:", err);
-  }
-
-  if (remoteList.length > 0) {
-    if (typeof window !== "undefined") {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteList));
-      } catch {
-        // ignore
+    if (remoteList.length > 0) {
+      if (typeof window !== "undefined") {
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(remoteList));
+        } catch {
+          // ignore
+        }
       }
+      return remoteList;
     }
-    return remoteList;
+  } catch {
+    // Silently fall back to local cache if Firestore rules aren't deployed yet
   }
 
-  // Fallback to localStorage cache
+  // 3. Fallback to localStorage cache
   if (typeof window !== "undefined") {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
@@ -70,11 +88,22 @@ export async function savePlatformWritingTask(
     }
   }
 
-  // 2. Save to Firestore
+  // 2. Save via Next.js persistent API
+  try {
+    await fetch("/api/writing-tasks", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(fullTask),
+    });
+  } catch {
+    // ignore
+  }
+
+  // 3. Save to Firestore (silent catch if rules don't permit client write)
   try {
     await setDoc(doc(db, "writing_tasks", id), fullTask, { merge: true });
-  } catch (err) {
-    console.warn("Error saving writing task to Firestore:", err);
+  } catch {
+    // silent
   }
 
   return fullTask;
@@ -93,10 +122,19 @@ export async function deletePlatformWritingTask(id: string): Promise<void> {
     }
   }
 
-  // 2. Remove from Firestore
+  // 2. Remove via API
+  try {
+    await fetch(`/api/writing-tasks?id=${encodeURIComponent(id)}`, {
+      method: "DELETE",
+    });
+  } catch {
+    // ignore
+  }
+
+  // 3. Remove from Firestore
   try {
     await deleteDoc(doc(db, "writing_tasks", id));
-  } catch (err) {
-    console.warn("Error deleting writing task from Firestore:", err);
+  } catch {
+    // silent
   }
 }

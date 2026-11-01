@@ -70,6 +70,11 @@ service cloud.firestore {
       allow write: if admin();
     }
 
+    match /writing_tasks/{taskId} {
+      allow read: if true;
+      allow write: if signedIn();
+    }
+
     // Custom speaking cue cards: private to the owner
     match /customSpeakingTasks/{taskId} {
       allow read: if signedIn() && resource.data.ownerId == request.auth.uid;
