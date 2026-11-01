@@ -19,6 +19,7 @@ import {
   Check,
   RotateCcw,
   Sparkles,
+  PenTool,
 } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { SAMPLE_READING_TESTS, SampleReadingTest } from "@/lib/reading/sample-data";
@@ -28,10 +29,11 @@ import {
   QualityReport,
   QualityReportStatus,
 } from "@/lib/services/quality-reports-service";
+import { WritingAdminCms } from "@/components/admin/WritingAdminCms";
 
 export default function AdminPage() {
   const { user, loading, isAdmin } = useAuth();
-  const [activeTab, setActiveTab] = useState<"cms" | "quality_reports">("cms");
+  const [activeTab, setActiveTab] = useState<"cms" | "writing" | "quality_reports">("writing");
   const [tests, setTests] = useState<SampleReadingTest[]>(SAMPLE_READING_TESTS);
   const [search, setSearch] = useState("");
   const [filterSkill, setFilterSkill] = useState("all");
@@ -187,21 +189,35 @@ export default function AdminPage() {
             IELTS Admin & Content CMS
           </h1>
           <p className="text-sm text-[var(--secondary)] mt-0.5">
-            Testlar bazasi, matnlar tahriri, savollar va nashr holatini boshqarish.
+            Testlar bazasi, matnlar tahriri, Writing Task 1 rasmlari va nashr holatini boshqarish.
           </p>
         </div>
 
-        <button
-          onClick={() => setModalOpen(true)}
-          className="btn-primary text-xs sm:text-sm !py-2.5 !px-4 shadow-sm cursor-pointer whitespace-nowrap"
-        >
-          <Plus className="w-4 h-4 mr-1" />
-          Yangi mashq yaratish
-        </button>
+        {activeTab === "cms" && (
+          <button
+            onClick={() => setModalOpen(true)}
+            className="btn-primary text-xs sm:text-sm !py-2.5 !px-4 shadow-sm cursor-pointer whitespace-nowrap"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Yangi mashq yaratish
+          </button>
+        )}
       </div>
 
       {/* Admin Subsystem Tabs */}
-      <div className="flex items-center gap-2 border-b border-[var(--border)] pb-2">
+      <div className="flex flex-wrap items-center gap-2 border-b border-[var(--border)] pb-2">
+        <button
+          onClick={() => setActiveTab("writing")}
+          className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === "writing"
+              ? "bg-[var(--primary)] text-white shadow-xs"
+              : "bg-[var(--surface-subtle)] text-[var(--secondary)] hover:text-[var(--foreground)]"
+          }`}
+        >
+          <PenTool className="w-4 h-4" />
+          <span>IELTS Writing (Task 1 & 2 R2 CMS)</span>
+        </button>
+
         <button
           onClick={() => setActiveTab("cms")}
           className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
@@ -211,7 +227,7 @@ export default function AdminPage() {
           }`}
         >
           <Layers className="w-4 h-4" />
-          <span>Materiallar & Mashqlar CMS</span>
+          <span>Reading & Listening CMS</span>
         </button>
 
         <button
@@ -227,7 +243,9 @@ export default function AdminPage() {
         </button>
       </div>
 
-      {activeTab === "quality_reports" ? (
+      {activeTab === "writing" ? (
+        <WritingAdminCms />
+      ) : activeTab === "quality_reports" ? (
         /* SECTION 13: QUALITY CONTROL & REPORT QUEUE */
         <div className="space-y-5">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-[var(--border)] pb-3">

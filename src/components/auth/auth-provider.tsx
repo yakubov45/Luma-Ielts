@@ -31,17 +31,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (user) {
         try {
           const tokenResult = await user.getIdTokenResult();
+          const userEmail = (user.email || "").toLowerCase();
+          const isAdmin =
+            tokenResult.claims.admin === true ||
+            ["muhammadyoqubjonov7@gmail.com", "admin@lumoielts.uz"].includes(userEmail);
           setState({
             user,
             loading: false,
-            isAdmin: tokenResult.claims.admin === true,
+            isAdmin,
             isTeacher: tokenResult.claims.teacher === true,
           });
         } catch {
+          const userEmail = (user.email || "").toLowerCase();
+          const isAdmin = ["muhammadyoqubjonov7@gmail.com", "admin@lumoielts.uz"].includes(userEmail);
           setState({
             user,
             loading: false,
-            isAdmin: false,
+            isAdmin,
             isTeacher: false,
           });
         }

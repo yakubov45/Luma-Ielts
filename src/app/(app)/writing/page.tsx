@@ -27,6 +27,7 @@ import {
   PlusCircle,
   MessageSquare,
   Flag,
+  Maximize2,
 } from "lucide-react";
 import Link from "next/link";
 import { useAuth } from "@/components/auth/auth-provider";
@@ -60,6 +61,8 @@ import {
   saveUserCustomWritingTask,
   CustomWritingTask,
 } from "@/lib/services/custom-tasks-service";
+import { fetchPlatformWritingTasks } from "@/lib/services/writing-tasks-service";
+import { PlatformWritingTask } from "@/lib/types/writing";
 
 export type WritingCategoryTab = "all" | "task1" | "task2" | "my_submissions";
 
@@ -70,7 +73,9 @@ export interface WritingTaskItem {
   categoryTag: string; // e.g. "bar_chart", "discuss_both_views"
   categoryLabel: string;
   prompt: string;
+  imageUrl?: string;
   visualDescription?: string;
+  modelAnswer?: string;
   suggestedMinutes: number;
   wordRequirement: number;
   isUserCreated?: boolean;
@@ -256,6 +261,11 @@ export default function WritingPage() {
   const [pastSubmissions, setPastSubmissions] = useState<WritingSubmission[]>([]);
   const [minWordsWarning, setMinWordsWarning] = useState(false);
 
+  // Platform Writing Tasks (from Firestore & Admin R2 CMS)
+  const [platformTasks, setPlatformTasks] = useState<PlatformWritingTask[]>([]);
+  const [zoomImageUrl, setZoomImageUrl] = useState<string | null>(null);
+  const [showModelAnswer, setShowModelAnswer] = useState(false);
+
   // Section 11: Custom Tasks State
   const [customTasks, setCustomTasks] = useState<CustomWritingTask[]>([]);
   const [showCustomModal, setShowCustomModal] = useState(false);
@@ -275,7 +285,7 @@ export default function WritingPage() {
     expectedAnswer?: string;
   } | null>(null);
 
-  // Load submissions, bookmarks, and custom tasks
+  // Load submissions, bookmarks, platform tasks, and custom tasks
   useEffect(() => {
     fetchUserWritingSubmissions(user?.uid).then((list) => {
       setPastSubmissions(list);
@@ -283,21 +293,47 @@ export default function WritingPage() {
     fetchUserCustomWritingTasks(user?.uid).then((list) => {
       setCustomTasks(list);
     });
+
+    const loadPlatformTasks = () => {
+      fetchPlatformWritingTasks().then((pTasks) => {
+        setPlatformTasks(pTasks);
+      });
+    };
+    loadPlatformTasks();
+
     setBookmarkedIds(getBookmarks().map((b) => b.id));
 
     const onSync = () => setBookmarkedIds(getBookmarks().map((b) => b.id));
     window.addEventListener("ielts-bookmarks-updated", onSync);
-    return () => window.removeEventListener("ielts-bookmarks-updated", onSync);
+    window.addEventListener("ielts-writing-tasks-updated", loadPlatformTasks);
+    return () => {
+      window.removeEventListener("ielts-bookmarks-updated", onSync);
+      window.removeEventListener("ielts-writing-tasks-updated", loadPlatformTasks);
+    };
   }, [user?.uid]);
 
-  // Merge platform reviewed tasks with user-created custom tasks
+  // Merge platform admin tasks, user custom tasks, and default catalog tasks
   const allTasks = useMemo<WritingTaskItem[]>(() => {
     const formattedCustom: WritingTaskItem[] = customTasks.map((ct) => ({
       ...ct,
       isUserCreated: true,
     }));
-    return [...formattedCustom, ...WRITING_TASKS];
-  }, [customTasks]);
+    return [...platformTasks, ...formattedCustom, ...WRITING_TASKS];
+  }, [platformTasks, customTasks]);
+
+  // Support ?task=ID URL parameter
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const taskId = params.get("task");
+      if (taskId && allTasks.length > 0) {
+        const found = allTasks.find((t) => t.id === taskId);
+        if (found) {
+          setActiveTask(found);
+        }
+      }
+    }
+  }, [allTasks]);
 
   // Load draft when task is selected
   useEffect(() => {
@@ -502,6 +538,32 @@ export default function WritingPage() {
                 {activeTask.prompt}
               </div>
 
+              {/* Cloudflare R2 Chart Image with Zoom Lightbox */}
+              {activeTask.imageUrl && (
+                <div className="space-y-2">
+                  <div className="relative rounded-2xl overflow-hidden border border-[var(--border)] bg-white dark:bg-stone-900 group shadow-sm">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={activeTask.imageUrl}
+                      alt={activeTask.title}
+                      className="w-full max-h-72 object-contain mx-auto p-2 cursor-zoom-in"
+                      onClick={() => setZoomImageUrl(activeTask.imageUrl || null)}
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setZoomImageUrl(activeTask.imageUrl || null)}
+                      className="absolute bottom-2.5 right-2.5 px-3 py-1.5 rounded-xl bg-black/75 hover:bg-black text-white text-xs font-bold backdrop-blur-xs flex items-center gap-1.5 transition-all cursor-pointer shadow-md"
+                    >
+                      <Maximize2 className="w-3.5 h-3.5" />
+                      <span>Kattalashtirish (Zoom)</span>
+                    </button>
+                  </div>
+                  <p className="text-[11px] text-[var(--muted)] text-center">
+                    Grafik raqamlari va yozuvlarini aniq ko‘rish uchun rasm ustiga bosing
+                  </p>
+                </div>
+              )}
+
               {activeTask.visualDescription && (
                 <div className="p-3.5 rounded-xl bg-orange-50/60 dark:bg-orange-950/30 border border-orange-200/60 dark:border-orange-900/40 text-xs text-[var(--foreground)] space-y-1">
                   <div className="font-bold text-[var(--primary)] flex items-center gap-1.5">
@@ -659,6 +721,30 @@ export default function WritingPage() {
                   </div>
                 </div>
 
+                {/* Model Answer (Band 8-9 Sample) */}
+                {activeTask.modelAnswer && (
+                  <div className="p-4 sm:p-5 rounded-2xl bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200/80 dark:border-emerald-800/50 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                      <span className="font-bold text-emerald-800 dark:text-emerald-300 text-xs sm:text-sm flex items-center gap-1.5">
+                        <Sparkles className="w-4 h-4 text-emerald-600" />
+                        <span>Band 8.5–9.0 Namunaviy Insho (Model Answer)</span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => setShowModelAnswer(!showModelAnswer)}
+                        className="text-xs font-bold text-emerald-700 dark:text-emerald-400 hover:underline cursor-pointer"
+                      >
+                        {showModelAnswer ? "Yashirish" : "Ko‘rsatish"}
+                      </button>
+                    </div>
+                    {showModelAnswer && (
+                      <p className="text-xs sm:text-sm text-[var(--foreground)] leading-relaxed whitespace-pre-line pt-2 border-t border-emerald-200/60 dark:border-emerald-800/40">
+                        {activeTask.modelAnswer}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 {/* Section 10 & 13 Actions */}
                 <div className="pt-3 border-t border-[var(--border)] flex flex-wrap items-center justify-between gap-3">
                   <button
@@ -705,6 +791,30 @@ export default function WritingPage() {
           )}
           </div>
         </div>
+
+        {/* Chart Zoom Lightbox */}
+        {zoomImageUrl && (
+          <div
+            onClick={() => setZoomImageUrl(null)}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/85 backdrop-blur-md cursor-zoom-out animate-fade-in"
+          >
+            <div className="relative max-w-5xl max-h-[92vh]">
+              <button
+                onClick={() => setZoomImageUrl(null)}
+                className="absolute -top-10 right-0 text-white hover:text-[var(--primary)] text-sm font-bold flex items-center gap-1.5 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+                <span>Yopish</span>
+              </button>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={zoomImageUrl}
+                alt="Zoomed chart view"
+                className="max-h-[85vh] max-w-full rounded-2xl shadow-2xl object-contain bg-white dark:bg-stone-900 p-2 border border-white/20"
+              />
+            </div>
+          </div>
+        )}
       </div>
     );
   }
@@ -901,7 +1011,7 @@ export default function WritingPage() {
               id: task.id,
               skill: "writing",
               title: task.title,
-              topic: task.categoryLabel,
+              topic: task.imageUrl ? `${task.categoryLabel} · 📷 Rasmli grafik` : task.categoryLabel,
               typeBadge: task.isUserCreated
                 ? "Shaxsiy mashq (Custom)"
                 : task.taskType === "task1"
@@ -929,7 +1039,7 @@ export default function WritingPage() {
               id: task.id,
               skill: "writing",
               title: task.title,
-              topic: task.categoryLabel,
+              topic: task.imageUrl ? `${task.categoryLabel} · 📷 Rasmli grafik` : task.categoryLabel,
               typeBadge: task.isUserCreated
                 ? "Shaxsiy mashq (Custom)"
                 : task.taskType === "task1"
