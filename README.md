@@ -1,6 +1,6 @@
-# IELTS Focus
+# Luma-Ielts
 
-IELTS Academic preparation workspace. The interface defaults to Uzbek. This repository is in Phase 1: secure foundation, accounts, learner profile, Firebase rules, and emulator scaffolding.
+Luma IELTS (LumoIELTS) — IELTS Academic & General preparation platform. The interface defaults to Uzbek.
 
 ## Local setup (PowerShell)
 
