@@ -1,3 +1,21 @@
+import {
+  IELTS_BAND8_SECTION_1,
+  IELTS_BAND8_SECTION_2,
+  IELTS_BAND8_SECTION_3,
+  IELTS_BAND8_SECTION_4,
+  IELTS_SYNTH_SECTION_1,
+  IELTS_BAND8_FULL_TEST,
+} from "./band8-tests";
+
+export {
+  IELTS_BAND8_SECTION_1,
+  IELTS_BAND8_SECTION_2,
+  IELTS_BAND8_SECTION_3,
+  IELTS_BAND8_SECTION_4,
+  IELTS_SYNTH_SECTION_1,
+  IELTS_BAND8_FULL_TEST,
+};
+
 export interface ListeningSegment {
   id: number;
   speaker: string;
@@ -25,6 +43,7 @@ export interface ListeningTestData {
   instructionsPart1: string;
   instructionsPart2?: string;
   totalDuration: number;
+  audioUrl?: string;
   segments: ListeningSegment[];
   questions: ListeningQuestion[];
 }
@@ -1052,6 +1071,12 @@ export const GRID_BATTERY_LECTURE_TEST: ListeningTestData = {
 };
 
 export const LISTENING_TESTS: Record<string, ListeningTestData> = {
+  "listening-mock-band8": IELTS_BAND8_FULL_TEST,
+  "band8-section-1": IELTS_BAND8_SECTION_1,
+  "band8-section-2": IELTS_BAND8_SECTION_2,
+  "band8-section-3": IELTS_BAND8_SECTION_3,
+  "band8-section-4": IELTS_BAND8_SECTION_4,
+  "synth-section-1": IELTS_SYNTH_SECTION_1,
   "oyster-bay-sailing-club": OYSTER_BAY_TEST,
   "section-1-accommodation": ACCOMMODATION_TEST,
   "section-2-campus-facilities": CAMPUS_FACILITIES_TEST,

@@ -338,3 +338,109 @@ input:not([type="checkbox"]):not([type="radio"]):focus, select:focus, textarea:f
   font-weight: 600;
 }
 
+
+
+/* ==========================================================================
+   Custom Scrollbar System: Olovrang (Flame Orange) & Sleek Modern Styling
+   ========================================================================== */
+
+/* Universal Firefox thin scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
+}
+
+/* Chrome, Edge, Safari WebKit Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 7px;
+  height: 7px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: var(--primary);
+  border-radius: 9999px;
+  border: 1px solid transparent;
+  background-clip: padding-box;
+  transition: background-color 0.2s ease;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-orange, #f97316);
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.6);
+}
+
+::-webkit-scrollbar-thumb:active {
+  background-color: var(--primary-hover, #ea580c);
+}
+
+/* Completely remove the clunky Windows up and down arrow buttons */
+::-webkit-scrollbar-button {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Utility: Completely Invisible Scrollbar (keeps scrolling functional) */
+.no-scrollbar::-webkit-scrollbar,
+.scrollbar-none::-webkit-scrollbar {
+  display: none !important;
+  width: 0 !important;
+  height: 0 !important;
+}
+
+.no-scrollbar,
+.scrollbar-none {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+}
+
+/* Utility: Extra Slim Olovrang (Flame Orange) Scrollbar for Cards & Sidebars */
+.scrollbar-orange {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
+}
+
+.scrollbar-orange::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.scrollbar-orange::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollbar-orange::-webkit-scrollbar-thumb {
+  background-color: var(--primary);
+  border-radius: 9999px;
+}
+
+.scrollbar-orange::-webkit-scrollbar-thumb:hover {
+  background-color: var(--accent-orange, #f97316);
+}
+
+/* Utility: Auto-reveal on Hover (Invisible when idle, orange when hovered) */
+.scrollbar-hover-reveal {
+  scrollbar-width: none;
+}
+.scrollbar-hover-reveal::-webkit-scrollbar {
+  width: 6px;
+}
+.scrollbar-hover-reveal::-webkit-scrollbar-thumb {
+  background-color: transparent;
+  border-radius: 9999px;
+}
+.scrollbar-hover-reveal:hover {
+  scrollbar-width: thin;
+  scrollbar-color: var(--primary) transparent;
+}
+.scrollbar-hover-reveal:hover::-webkit-scrollbar-thumb {
+  background-color: var(--primary);
+}

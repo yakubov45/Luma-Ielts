@@ -1175,7 +1175,7 @@ export function ReadingWorkspace() {
 
         {/* Right: Active Passage Questions (5 cols) - Sticky so it stays right in front of the user while reading */}
         <section
-          className={`lg:col-span-5 space-y-4 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto pr-1 ${
+          className={`lg:col-span-5 space-y-4 lg:sticky lg:top-28 lg:self-start lg:max-h-[calc(100vh-8rem)] lg:overflow-y-auto pr-2 ${
             mobileTab === "questions" ? "block" : "hidden lg:block"
           }`}
         >
@@ -1306,7 +1306,7 @@ export function ReadingWorkspace() {
       <div className="sticky bottom-0 z-30 -mx-4 md:-mx-8 px-4 md:px-8 py-3 bg-[var(--surface)]/95 backdrop-blur-md border-t border-[var(--border)] shadow-2xl mt-4">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Katakchalar: Passage 1, 2, 3 Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto w-full md:w-auto pb-1 md:pb-0">
+          <div className="flex items-center gap-2 overflow-x-auto no-scrollbar w-full md:w-auto pb-1 md:pb-0">
             <span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider hidden sm:inline mr-1">
               Passage:
             </span>
@@ -1355,7 +1355,7 @@ export function ReadingWorkspace() {
           </div>
 
           {/* Active Passage Question Strip */}
-          <div className="flex items-center gap-1.5 overflow-x-auto max-w-full py-1">
+          <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar max-w-full py-1">
             <span className="text-[11px] font-bold text-[var(--muted)] mr-1 hidden lg:inline">
               Savollar:
             </span>

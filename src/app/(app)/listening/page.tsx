@@ -133,6 +133,17 @@ interface ListeningCatalogItem {
 const LISTENING_CATALOG_ITEMS: ListeningCatalogItem[] = [
   // Full Tests
   {
+    id: "listening-mock-band8",
+    category: "full_tests",
+    title: "IELTS Band 8.0 Official Practice Full Mock",
+    topic: "Freight Logistics, Airport Layout, Marine Biology & Global Supply Chains",
+    typeBadge: "Band 8.0 · Cloudflare R2 Audio",
+    typeBadgeColor: "primary",
+    itemCountLabel: "4 ta bo‘lim · 40 ta savol · Real Audio",
+    durationMinutes: 30,
+    isPlayable: true,
+  },
+  {
     id: "listening-mock-1",
     category: "full_tests",
     title: "IELTS Academic Listening Full Test 1",
@@ -155,6 +166,66 @@ const LISTENING_CATALOG_ITEMS: ListeningCatalogItem[] = [
     isPlayable: true,
   },
   // Section Practice
+  {
+    id: "band8-section-1",
+    category: "section_practice",
+    sectionNumber: 1,
+    title: "Band 8.0: Commercial Freight Shipping Enquiry",
+    topic: "Pacific Freight and Logistics Booking Form",
+    typeBadge: "Cloudflare Audio · 1-Bo‘lim",
+    typeBadgeColor: "emerald",
+    itemCountLabel: "1 ta audio · 10 ta savol (1–10)",
+    durationMinutes: 3,
+    isPlayable: true,
+  },
+  {
+    id: "band8-section-2",
+    category: "section_practice",
+    sectionNumber: 2,
+    title: "Band 8.0: Greenwich Airport Terminal 3 Expansion Briefing",
+    topic: "Terminal 3 Public Briefing & Airport Facility Map",
+    typeBadge: "Cloudflare Audio · 2-Bo‘lim",
+    typeBadgeColor: "indigo",
+    itemCountLabel: "1 ta audio · 10 ta savol (A–C & A–G)",
+    durationMinutes: 3,
+    isPlayable: true,
+  },
+  {
+    id: "band8-section-3",
+    category: "section_practice",
+    sectionNumber: 3,
+    title: "Band 8.0: Marine Biology Fieldwork Assignment",
+    topic: "Coral Reef Bleaching Research Tutorial",
+    typeBadge: "Cloudflare Audio · 3-Bo‘lim",
+    typeBadgeColor: "amber",
+    itemCountLabel: "1 ta audio · 10 ta savol (A–C & A–F)",
+    durationMinutes: 4,
+    isPlayable: true,
+  },
+  {
+    id: "band8-section-4",
+    category: "section_practice",
+    sectionNumber: 4,
+    title: "Band 8.0: The Evolution of Global Supply Chains",
+    topic: "University Lecture on Global Logistics & Modern Supply Chains",
+    typeBadge: "Cloudflare Audio · 4-Bo‘lim",
+    typeBadgeColor: "purple",
+    itemCountLabel: "1 ta audio · 10 ta savol (31–40)",
+    durationMinutes: 4,
+    isPlayable: true,
+  },
+  {
+    id: "synth-section-1",
+    category: "section_practice",
+    sectionNumber: 1,
+    title: "Section 1: Booking a Moving Company (Swift Relocations)",
+    topic: "Swift Relocations House Moving Booking",
+    typeBadge: "Cloudflare Audio · 1-Bo‘lim",
+    typeBadgeColor: "emerald",
+    itemCountLabel: "1 ta audio · 10 ta savol",
+    durationMinutes: 3,
+    isPlayable: true,
+  },
   {
     id: "oyster-bay-sailing-club",
     category: "section_practice",
@@ -568,9 +639,9 @@ export default function ListeningPage() {
 
   const tabs = [
     { id: "all", label: "Barchasi", count: LISTENING_CATALOG_ITEMS.length },
-    { id: "full_tests", label: "To‘liq Testlar", count: 2 },
-    { id: "section_practice", label: "Bo‘lim Mashqlari", count: 4 },
-    { id: "dictation", label: "Diktant", count: 1 },
+    { id: "full_tests", label: "To‘liq Testlar", count: LISTENING_CATALOG_ITEMS.filter((x) => x.category === "full_tests").length },
+    { id: "section_practice", label: "Bo‘lim Mashqlari", count: LISTENING_CATALOG_ITEMS.filter((x) => x.category === "section_practice").length },
+    { id: "dictation", label: "Diktant", count: LISTENING_CATALOG_ITEMS.filter((x) => x.category === "dictation").length },
   ];
 
   const resetAllFilters = () => {

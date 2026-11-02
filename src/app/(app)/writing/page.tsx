@@ -63,6 +63,7 @@ import {
 } from "@/lib/services/custom-tasks-service";
 import { fetchPlatformWritingTasks } from "@/lib/services/writing-tasks-service";
 import { PlatformWritingTask } from "@/lib/types/writing";
+import defaultWritingTasksData from "@/data/writing-tasks.json";
 
 export type WritingCategoryTab = "all" | "task1" | "task2" | "my_submissions";
 
@@ -81,143 +82,7 @@ export interface WritingTaskItem {
   isUserCreated?: boolean;
 }
 
-const WRITING_TASKS: WritingTaskItem[] = [
-  // Academic Task 1
-  {
-    id: "task1-internet-access",
-    taskType: "task1",
-    title: "European Household Internet Access (2010–2024)",
-    categoryTag: "bar_chart",
-    categoryLabel: "Bar Chart",
-    prompt:
-      "The bar chart illustrates the percentage of households with access to high-speed internet across four European nations (Germany, France, Spain, and Poland) between 2010 and 2024. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
-    visualDescription:
-      "Bar chart showing growth from 45% to 92% in Germany, 40% to 88% in France, 35% to 84% in Spain, and 28% to 81% in Poland over 14 years.",
-    suggestedMinutes: 20,
-    wordRequirement: 150,
-  },
-  {
-    id: "task1-renewable-energy",
-    taskType: "task1",
-    title: "Global Renewable Energy Consumption Trends",
-    categoryTag: "line_graph",
-    categoryLabel: "Line Graph",
-    prompt:
-      "The line graph shows changes in global consumption of solar, wind, and hydroelectric energy between 2000 and 2025. Summarise the information by selecting and reporting the main features, and make comparisons where relevant.",
-    visualDescription:
-      "Line graph showing sharp upward trajectory for solar and wind from 2015 onwards, while hydroelectricity maintained steady linear growth.",
-    suggestedMinutes: 20,
-    wordRequirement: 150,
-  },
-  {
-    id: "task1-energy-expenditure",
-    taskType: "task1",
-    title: "Household Energy Expenditure by Sector",
-    categoryTag: "pie_chart",
-    categoryLabel: "Pie Chart",
-    prompt:
-      "The pie charts compare household expenditure on heating, cooling, lighting, and appliances in an average European home in 2000 and 2024. Summarise the information by selecting and reporting the main features.",
-    visualDescription:
-      "Two pie charts illustrating heating dropping from 52% to 38%, while electronic appliances rose from 18% to 31%.",
-    suggestedMinutes: 20,
-    wordRequirement: 150,
-  },
-  {
-    id: "task1-transit-table",
-    taskType: "task1",
-    title: "Public Transit Usage in 5 World Metropolises",
-    categoryTag: "table",
-    categoryLabel: "Table",
-    prompt:
-      "The table outlines daily metro passenger numbers, average ticket prices, and percentage of zero-emission fleets across London, Tokyo, Paris, New York, and Seoul. Summarise the key comparisons.",
-    visualDescription:
-      "Table with 5 cities comparing fleet electrification (Seoul leading at 68%) and passenger volume.",
-    suggestedMinutes: 20,
-    wordRequirement: 150,
-  },
-  {
-    id: "task1-desalination-process",
-    taskType: "task1",
-    title: "Solar Water Desalination Industrial Process",
-    categoryTag: "process",
-    categoryLabel: "Process",
-    prompt:
-      "The diagram illustrates the sequential stages involved in converting seawater into potable drinking water using a solar-powered desalination plant. Summarise the main steps.",
-    visualDescription:
-      "Diagram with intake pipe, multi-stage solar evaporator, condensation chamber, mineral enrichment, and distribution storage.",
-    suggestedMinutes: 20,
-    wordRequirement: 150,
-  },
-  {
-    id: "task1-coastal-redevelopment",
-    taskType: "task1",
-    title: "Coastal Town Redevelopment (1995 vs Present)",
-    categoryTag: "map",
-    categoryLabel: "Map",
-    prompt:
-      "The two maps compare the coastal town of Portwood in 1995 and after modern redevelopment in the present day. Summarise the major urban transformations.",
-    visualDescription:
-      "Maps showing conversion of old industrial docks into pedestrian marina, green park, and modern residential apartments.",
-    suggestedMinutes: 20,
-    wordRequirement: 150,
-  },
-  // Task 2
-  {
-    id: "task2-university-purpose",
-    taskType: "task2",
-    title: "University Education: Career Skills vs Broader Knowledge",
-    categoryTag: "discuss_both_views",
-    categoryLabel: "Discuss Both Views",
-    prompt:
-      "Some people believe that universities should focus exclusively on preparing students for future employment, while others think education has a broader purpose for personal and societal growth. Discuss both views and give your opinion.",
-    suggestedMinutes: 40,
-    wordRequirement: 250,
-  },
-  {
-    id: "task2-ai-workplace",
-    taskType: "task2",
-    title: "Artificial Intelligence in Education & Workplaces",
-    categoryTag: "opinion",
-    categoryLabel: "Opinion / Agree or Disagree",
-    prompt:
-      "As artificial intelligence becomes increasingly integrated into academic study and corporate workplaces, some argue that human creativity and critical thinking are at risk of deteriorating. To what extent do you agree or disagree?",
-    suggestedMinutes: 40,
-    wordRequirement: 250,
-  },
-  {
-    id: "task2-traffic-smog",
-    taskType: "task2",
-    title: "Urban Traffic Congestion & Environmental Smog",
-    categoryTag: "problems_solutions",
-    categoryLabel: "Problems & Solutions",
-    prompt:
-      "Traffic congestion and worsening air pollution in major metropolitan areas are severely degrading residents' health and quality of life. What are the primary causes of this issue, and what feasible measures can municipal governments implement to resolve it?",
-    suggestedMinutes: 40,
-    wordRequirement: 250,
-  },
-  {
-    id: "task2-remote-work",
-    taskType: "task2",
-    title: "Remote Working & Telecommuting Culture",
-    categoryTag: "advantages_disadvantages",
-    categoryLabel: "Advantages & Disadvantages",
-    prompt:
-      "An increasing number of companies now allow employees to work entirely from home. Do the advantages of telecommuting outweigh its disadvantages for workers and organizations?",
-    suggestedMinutes: 40,
-    wordRequirement: 250,
-  },
-  {
-    id: "task2-consumerism-youth",
-    taskType: "task2",
-    title: "Consumerism & Materialism Among Youth",
-    categoryTag: "two_part",
-    categoryLabel: "Two-Part Questions",
-    prompt:
-      "Young people today are heavily influenced by social media advertising to purchase fashionable products and luxury goods. Why is this happening? What impact does this growing materialism have on society?",
-    suggestedMinutes: 40,
-    wordRequirement: 250,
-  },
-];
+const WRITING_TASKS: WritingTaskItem[] = defaultWritingTasksData as unknown as WritingTaskItem[];
 
 const TASK1_FILTER_OPTIONS: SkillFilterOption[] = [
   { id: "all", label: "Barcha turlar" },
@@ -318,7 +183,13 @@ export default function WritingPage() {
       ...ct,
       isUserCreated: true,
     }));
-    return [...platformTasks, ...formattedCustom, ...WRITING_TASKS];
+    const combined = [...platformTasks, ...formattedCustom, ...WRITING_TASKS];
+    const seen = new Set<string>();
+    return combined.filter((t) => {
+      if (seen.has(t.id)) return false;
+      seen.add(t.id);
+      return true;
+    });
   }, [platformTasks, customTasks]);
 
   // Support ?task=ID URL parameter

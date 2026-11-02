@@ -81,6 +81,7 @@ export function ListeningWorkspace({ testId = "oyster-bay-sailing-club", onExit 
 
   // Audio timers & speech refs
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
   const speechRef = useRef<SpeechSynthesisUtterance | null>(null);
 
   // Count answered questions
@@ -131,6 +132,20 @@ export function ListeningWorkspace({ testId = "oyster-bay-sailing-club", onExit 
   };
 
   const handlePlayToggle = () => {
+    if (testData.audioUrl && audioRef.current) {
+      if (isPlaying) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      } else {
+        audioRef.current.play().then(() => setIsPlaying(true)).catch((err) => {
+          console.warn("Audio element play error, falling back to TTS:", err);
+          setIsPlaying(true);
+          speakSegment(activeSegmentIndex);
+        });
+      }
+      return;
+    }
+
     if (isPlaying) {
       setIsPlaying(false);
       if (typeof window !== "undefined" && "speechSynthesis" in window) {
@@ -148,6 +163,15 @@ export function ListeningWorkspace({ testId = "oyster-bay-sailing-club", onExit 
     }
     setActiveSegmentIndex(0);
     setCurrentTime(0);
+
+    if (testData.audioUrl && audioRef.current) {
+      audioRef.current.currentTime = 0;
+      if (isPlaying) {
+        audioRef.current.play().catch(console.error);
+      }
+      return;
+    }
+
     if (isPlaying) {
       speakSegment(0);
     }
@@ -181,6 +205,20 @@ export function ListeningWorkspace({ testId = "oyster-bay-sailing-club", onExit 
     };
   }, [isPlaying, speed, activeSegmentIndex, testData]);
 
+
+  // Sync HTML audio element with speed and mute controls
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = speed;
+    }
+  }, [speed]);
+
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.muted = isMuted;
+    }
+  }, [isMuted]);
+
   // Clean up speech synthesis when component unmounts
   useEffect(() => {
     return () => {
@@ -205,6 +243,12 @@ export function ListeningWorkspace({ testId = "oyster-bay-sailing-club", onExit 
     );
     const targetIdx = segIdx !== -1 ? segIdx : 0;
     setActiveSegmentIndex(targetIdx);
+
+    if (testData.audioUrl && audioRef.current) {
+      audioRef.current.currentTime = newTime;
+      return;
+    }
+
     if (isPlaying) {
       speakSegment(targetIdx);
     }
@@ -351,6 +395,30 @@ export function ListeningWorkspace({ testId = "oyster-bay-sailing-club", onExit 
 
   return (
     <div className="space-y-6 pb-28">
+      {/* HTML5 Audio Element for Cloudflare R2 / Local Studio Audio */}
+      {testData.audioUrl && (
+        <audio
+          ref={audioRef}
+          src={testData.audioUrl}
+          preload="auto"
+          onTimeUpdate={() => {
+            if (audioRef.current) {
+              const ct = Math.floor(audioRef.current.currentTime);
+              setCurrentTime(ct);
+              const segIdx = testData.segments.findIndex(
+                (s) => ct >= s.startSec && ct < s.endSec
+              );
+              if (segIdx !== -1 && segIdx !== activeSegmentIndex) {
+                setActiveSegmentIndex(segIdx);
+              }
+            }
+          }}
+          onEnded={() => setIsPlaying(false)}
+          onPlay={() => setIsPlaying(true)}
+          onPause={() => setIsPlaying(false)}
+        />
+      )}
+
       {/* 1. TOP STICKY AUDIO & CONTROL BAR */}
       <div className="sticky top-14 z-20 flex flex-wrap items-center justify-between gap-3 p-3.5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] shadow-xs">
         {/* Left: Back & Title */}
@@ -990,24 +1058,112 @@ export function ListeningWorkspace({ testId = "oyster-bay-sailing-club", onExit 
           </div>
         )}
 
-        {/* 4.E: SECTION 4 & OTHER TESTS — THEMATIC LECTURE NOTES & FORM COMPLETION */}
+        {/* 4.E: GENERAL / BAND 8 / OTHER TESTS — ADAPTIVE QUESTION RENDERER */}
         {(testData.id === "section-4-grid-lecture" ||
           (!["oyster-bay-sailing-club", "section-1-accommodation", "section-2-campus-facilities", "section-3-research-assignment"].includes(testData.id))) && (
           <div className="space-y-6">
-            <div className="p-6 sm:p-8 rounded-2xl bg-[var(--surface-subtle)] border border-[var(--border)] space-y-5 text-xs sm:text-sm leading-relaxed text-[var(--foreground)]">
-              <h3 className="text-base font-black text-[var(--foreground)] border-b border-[var(--border)] pb-2">
-                Lecture Notes & Detailed Summary (Questions 1–10)
-              </h3>
+            {/* Part 1 Questions */}
+            <div className="p-6 sm:p-8 rounded-2xl bg-[var(--surface-subtle)] border border-[var(--border)] space-y-6 text-xs sm:text-sm leading-relaxed text-[var(--foreground)]">
+              <div className="space-y-1 border-b border-[var(--border)] pb-3">
+                <h3 className="text-base font-black text-[var(--foreground)]">
+                  {testData.questions.some(q => q.options) ? "Questions & Multi-Choice Analysis" : "Notes & Form Completion"}
+                </h3>
+                <p className="text-xs text-[var(--primary)] font-semibold">
+                  {testData.instructionsPart1}
+                </p>
+              </div>
 
               <div className="space-y-4">
                 {testData.questions.map((q) => {
+                  const isAnswered = !!answers[q.id];
+                  const isFlagged = flags[q.num];
+
+                  // A: Multiple Choice or Matching with options
+                  if (q.options && q.options.length > 0) {
+                    return (
+                      <div
+                        key={q.id}
+                        className="p-4 sm:p-5 rounded-2xl bg-[var(--surface)] border border-[var(--border)] space-y-3 shadow-2xs"
+                      >
+                        <div className="flex items-start gap-3">
+                          <button
+                            type="button"
+                            onClick={() => toggleFlag(q.num)}
+                            title={`Savol ${q.num} ${isFlagged ? "(Belgilangan)" : "(Belgilash)"}`}
+                            className={`px-2.5 py-1 rounded-lg text-xs font-black shrink-0 transition-colors cursor-pointer ${
+                              isFlagged
+                                ? "bg-amber-400 text-stone-900"
+                                : isAnswered
+                                ? "bg-[var(--primary)] text-white"
+                                : "bg-[var(--surface-subtle)] border border-[var(--border)] text-[var(--foreground)]"
+                            }`}
+                          >
+                            {q.num}
+                          </button>
+                          <div className="font-bold text-xs sm:text-sm text-[var(--foreground)] flex-1 pt-0.5">
+                            {q.prompt}
+                          </div>
+                        </div>
+
+                        <div className={`grid gap-2 ${q.options.length <= 4 ? "grid-cols-1 sm:grid-cols-2" : "grid-cols-1 sm:grid-cols-2 md:grid-cols-3"}`}>
+                          {q.options.map((opt) => {
+                            const isSelected = answers[q.id] === opt.id;
+                            const isOptionCorrect = submitted && q.acceptedAnswers.includes(opt.id);
+                            const isOptionWrongSelected = submitted && isSelected && !isOptionCorrect;
+
+                            return (
+                              <button
+                                key={opt.id}
+                                type="button"
+                                onClick={() => handleAnswerChange(q.id, opt.id)}
+                                disabled={submitted}
+                                className={`p-3 rounded-xl border text-left text-xs font-semibold flex items-center gap-2.5 transition-all cursor-pointer ${
+                                  isSelected
+                                    ? "border-[var(--primary)] bg-[var(--nav-active-bg)] text-[var(--nav-active-text)] font-bold ring-1 ring-[var(--primary)]"
+                                    : "border-[var(--border)] bg-[var(--surface-subtle)] hover:bg-[var(--surface)] text-[var(--foreground)]"
+                                } ${
+                                  isOptionCorrect
+                                    ? "border-emerald-500 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 ring-1 ring-emerald-500"
+                                    : isOptionWrongSelected
+                                    ? "border-rose-500 bg-rose-500/10 text-rose-700 dark:text-rose-300"
+                                    : ""
+                                }`}
+                              >
+                                <span className="w-6 h-6 rounded-full border border-current flex items-center justify-center text-xs font-black shrink-0">
+                                  {opt.id}
+                                </span>
+                                <span className="flex-1 leading-snug">{opt.text}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // B: Fill-in-the-blank with ________ placeholder
+                  if (q.prompt.includes("________")) {
+                    const parts = q.prompt.split("________");
+                    return (
+                      <div key={q.id} className="flex items-start gap-2.5 leading-relaxed">
+                        <span className="text-[var(--primary)] font-bold text-sm shrink-0 mt-0.5">•</span>
+                        <div className="flex-1 text-[var(--foreground)]">
+                          <span>{parts[0]}</span>
+                          {renderInlineInput(q.num, q.id, 120)}
+                          <span>{parts[1] || ""}</span>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  // C: Standard note prompt
                   const cleanedPrompt = q.prompt.replace(/\[\d+\]/g, "");
                   return (
-                    <div key={q.id} className="flex items-start gap-2.5">
+                    <div key={q.id} className="flex items-start gap-2.5 leading-relaxed">
                       <span className="text-[var(--primary)] font-bold text-sm shrink-0 mt-0.5">•</span>
                       <div className="flex-1 text-[var(--foreground)]">
                         {cleanedPrompt}
-                        {renderInlineInput(q.num, q.id, 90)}
+                        {renderInlineInput(q.num, q.id, 100)}
                       </div>
                     </div>
                   );

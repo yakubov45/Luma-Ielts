@@ -1,3 +1,21 @@
+import {
+  LUMO_READING_TESTS,
+  LUMO_READING_CATALOG_ITEMS,
+  LUMO_AR_001_FULL,
+  LUMO_AR_001_P1,
+  LUMO_AR_001_P2,
+  LUMO_AR_001_P3,
+} from "./lumo-mock-tests";
+
+export {
+  LUMO_READING_TESTS,
+  LUMO_READING_CATALOG_ITEMS,
+  LUMO_AR_001_FULL,
+  LUMO_AR_001_P1,
+  LUMO_AR_001_P2,
+  LUMO_AR_001_P3,
+};
+
 import { SampleReadingTest } from "./sample-data";
 
 export interface ReadingCatalogItem {
@@ -26080,6 +26098,7 @@ export const FULL_MOCK_TESTS: SampleReadingTest[] = [
 ];
 
 export const ALL_READING_TESTS: SampleReadingTest[] = [
+  ...LUMO_READING_TESTS,
   ...FULL_MOCK_TESTS,
   ...PASSAGE_1_TESTS,
   ...PASSAGE_2_TESTS,
@@ -26087,6 +26106,7 @@ export const ALL_READING_TESTS: SampleReadingTest[] = [
 ];
 
 export const ALL_READING_CATALOG_ITEMS: ReadingCatalogItem[] = [
+  ...LUMO_READING_CATALOG_ITEMS,
   {
     "id": "rd-mock-1",
     "category": "full_tests",
