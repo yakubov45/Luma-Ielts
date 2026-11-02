@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { Settings, User, Bell, Shield, Save, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/components/auth/auth-provider";
 import { db } from "@/lib/firebase/client";
-import { doc, getDoc, updateDoc, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp } from "firebase/firestore";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 
 export default function SettingsPage() {
@@ -64,7 +64,7 @@ export default function SettingsPage() {
 
     if (user) {
       try {
-        await updateDoc(doc(db, "users", user.uid), updatePayload);
+        await setDoc(doc(db, "users", user.uid), updatePayload, { merge: true });
         setSaved(true);
         setTimeout(() => setSaved(false), 2500);
       } catch (err) {

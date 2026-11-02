@@ -105,16 +105,21 @@ export async function saveQuestionnairePreferences(
           ? null
           : parseFloat(payload.targetBand) || 6.5;
 
-      await updateDoc(userRef, {
-        targetBand: numericTargetBand,
-        dailyStudyMinutes: payload.dailyStudyMinutes,
-        examDate: payload.examDate,
-        timezone: payload.timezone,
-        onboardingCompleted: true,
-        questionnaire: payload,
-        studyPlanPreferences: payload,
-        updatedAt: serverTimestamp(),
-      });
+      await setDoc(
+        userRef,
+        {
+          displayName: "IELTS learner",
+          targetBand: numericTargetBand,
+          dailyStudyMinutes: payload.dailyStudyMinutes,
+          examDate: payload.examDate,
+          timezone: payload.timezone,
+          onboardingCompleted: true,
+          questionnaire: payload,
+          studyPlanPreferences: payload,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
     } catch (e) {
       console.warn("Failed to persist questionnaire in Firestore:", e);
     }

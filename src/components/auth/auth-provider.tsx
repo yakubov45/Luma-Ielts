@@ -3,6 +3,7 @@
 import { onAuthStateChanged, type User } from "firebase/auth";
 import { createContext, useContext, useEffect, useState } from "react";
 import { auth } from "@/lib/firebase/client";
+import { ensureUserProfile } from "@/lib/auth/profile";
 
 export interface AuthState {
   user: User | null;
@@ -29,6 +30,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     return onAuthStateChanged(auth, async (user) => {
       if (user) {
+        ensureUserProfile(user).catch((err) => {
+          console.warn("Background user profile sync deferred:", err);
+        });
         try {
           const tokenResult = await user.getIdTokenResult();
           const userEmail = (user.email || "").toLowerCase();

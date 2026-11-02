@@ -16,19 +16,23 @@ export async function ensureUserProfile(user: User): Promise<{ isNew: boolean; o
       };
     }
 
-    await setDoc(ref, {
-      displayName: user.displayName || "IELTS learner",
-      email: user.email || "",
-      targetBand: null,
-      examDate: null,
-      dailyStudyMinutes: 30,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tashkent",
-      locale: "uz",
-      preferences: { theme: "system" },
-      onboardingCompleted: false,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-    });
+    await setDoc(
+      ref,
+      {
+        displayName: user.displayName || user.email?.split("@")[0] || "IELTS learner",
+        email: user.email || "",
+        targetBand: null,
+        examDate: null,
+        dailyStudyMinutes: 30,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Tashkent",
+        locale: "uz",
+        preferences: { theme: "system" },
+        onboardingCompleted: false,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      },
+      { merge: true }
+    );
 
     return { isNew: true, onboardingCompleted: false };
   } catch (error) {
