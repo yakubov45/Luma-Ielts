@@ -57,3 +57,7 @@ temp-recordings/
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# scripts
+scripts/
+
